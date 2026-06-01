@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영상 제작 예산 관리 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --border: #e2e8f0;
+            --text-dark: #1f2937;
+            --text-gray: #6b7280;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 28px 24px 24px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0 0 8px 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: start;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            min-width: 0;
+        }
+
+        label {
+            font-size: 0.92em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        input, select {
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.95em;
+            width: 100%;
+            min-height: 45px;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+        }
+
+        #shootingDaysGroup {
+            min-width: 90px;
+        }
+
+        #shootingDays {
+            width: 100%;
+            min-width: 90px;
+            min-height: 45px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+        }
+
+        input[type="number"] {
+            text-align: right;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            min-height: auto;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            font-size: 0.95em;
+            line-height: 1.35;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(30, 58, 138, 0.18);
+        }
+
+        .btn-edit,
+        .btn-delete {
+            min-width: 72px;
+            min-height: 30px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            line-height: 1.25;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+        }
+
+        .btn-edit {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        tbody .btn-edit,
+        tbody .btn-delete {
+            width: 56px;
+            height: 32px;
+            min-width: 56px;
+            min-height: 32px;
+            padding: 6px 10px !important;
+            font-size: 0.85em;
+        }
+
+        .btn-reset {
+            background: var(--border);
+            color: var(--text-gray);
+        }
+
+        .btn-reset:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text-dark);
+        }
+
+        .btn-darkmode {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        .project-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .view-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 16px 0 22px;
+        }
+
+        .view-tab {
+            border: 1px solid var(--border);
+            background: var(--bg-white);
+            color: var(--text-dark);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .view-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 12px 28px rgba(30, 58, 138, 0.18);
+        }
+
+        .summary-section {
+            position: sticky;
+            top: 112px;
+            z-index: 2;
+            background: var(--bg-light);
+            padding-top: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid transparent;
+        }
+
+        .settlement-section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+            margin-bottom: 30px;
+        }
+
+        .settlement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .settlement-table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .settlement-table-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 420px;
+        }
+
+        .settlement-table-wrapper th,
+        .settlement-table-wrapper td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            font-size: 0.94em;
+            white-space: nowrap;
+        }
+
+        .settlement-table-wrapper th {
+            background: var(--bg-light);
+            font-weight: 700;
+        }
+
+        .settlement-value {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .edit-status {
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            color: var(--text-dark);
+            font-size: 0.95em;
+            margin-bottom: 16px;
+        }
+
+        .note {
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 4px solid rgba(59, 130, 246, 0.6);
+            padding: 14px 16px;
+            border-radius: 6px;
+            color: var(--text-dark);
+            margin-top: 16px;
+        }
+
+        .table-section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-title {
+            background: var(--bg-light);
+            padding: 12px 16px;
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 680px;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.8) transparent;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 7px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.65);
+            border-radius: 999px;
+        }
+
+        table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+
+        thead th,
+        tbody td {
+            position: relative;
+            vertical-align: middle;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--bg-light);
+            border-bottom: 2px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            background: var(--bg-light);
+            white-space: nowrap;
+        }
+
+        thead th:nth-child(1) {
+            left: 0;
+            position: sticky;
+            z-index: 80;
+            background: var(--bg-light);
+        }
+
+        thead th:nth-child(2) {
+            left: 64px;
+            position: sticky;
+            z-index: 80;
+            background: var(--bg-light);
+        }
+
+        th {
+            padding: 9px 7px;
+            text-align: right;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 0.8em;
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+
+        th:first-child, th:nth-child(2), th:nth-child(3) {
+            text-align: left;
+        }
+
+        th:nth-child(4) {
+            text-align: left;
+        }
+
+        tbody td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            width: 64px;
+            min-width: 64px;
+            max-width: 64px;
+            background: var(--bg-white);
+            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        tbody td:nth-child(2) {
+            position: sticky;
+            left: 64px;
+            z-index: 20;
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            background: var(--bg-white);
+            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th:nth-child(3), td:nth-child(3) {
+            width: 78px;
+            min-width: 78px;
+            max-width: 78px;
+        }
+
+        th:nth-child(4), td:nth-child(4) {
+            width: 170px;
+            min-width: 150px;
+            max-width: 240px;
+        }
+
+        th:nth-child(5), td:nth-child(5) {
+            width: 92px;
+            max-width: 92px;
+            min-width: 92px;
+        }
+
+        th:nth-child(6), td:nth-child(6),
+        th:nth-child(7), td:nth-child(7) {
+            max-width: 68px;
+            min-width: 60px;
+        }
+
+        th:nth-child(8), td:nth-child(8) {
+            max-width: 80px;
+            min-width: 80px;
+        }
+
+        th:nth-child(9), td:nth-child(9) {
+            max-width: 96px;
+            min-width: 96px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+
+        th:nth-child(10), td:nth-child(10) {
+            max-width: 96px;
+            min-width: 96px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+
+        th:nth-child(11), td:nth-child(11) {
+            max-width: 96px;
+            min-width: 96px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+
+        th:nth-child(12), td:nth-child(12) {
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+
+        th:nth-child(13), td:nth-child(13) {
+            max-width: 96px;
+            min-width: 96px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+
+        .sticky-final, .sticky-edit, .sticky-delete {
+            position: sticky;
+            z-index: 40;
+            background: #ffffff;
+            border-left: 0;
+            box-shadow: none;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sticky-final {
+            right: 144px;
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            border-left: 1px solid #dfe3ea;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.08);
+        }
+
+        .sticky-edit {
+            right: 72px;
+            width: 72px;
+            min-width: 72px;
+            max-width: 72px;
+        }
+
+        .sticky-edit, .sticky-delete {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .sticky-delete {
+            right: 0;
+            width: 72px;
+            min-width: 72px;
+            max-width: 72px;
+        }
+
+        thead th:nth-child(14),
+        thead th:nth-child(15),
+        thead th:nth-child(16) {
+            z-index: 90;
+            background: #ffffff;
+        }
+
+        td {
+            padding: 9px 7px;
+            text-align: right;
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.84em;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        td:nth-child(5), td:nth-child(6), td:nth-child(7), td:nth-child(8), td:nth-child(9),
+        td:nth-child(9), td:nth-child(10), td:nth-child(11), td:nth-child(12), td:nth-child(13), td:nth-child(14) {
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            padding-right: 8px;
+        }
+
+        td:first-child, td:nth-child(2), td:nth-child(3), td:nth-child(4) {
+            text-align: left;
+        }
+
+        tbody tr:nth-child(odd):not(.category-row):not(.total-row) {
+            background: rgba(15, 23, 42, 0.03);
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        .category-row {
+            background: rgba(59, 130, 246, 0.08);
+            font-weight: 700;
+            border-top: 2px solid var(--border);
+        }
+
+        .category-row td {
+            padding: 14px 12px;
+            color: var(--primary);
+        }
+
+        .category-row .sticky-final,
+        .category-row .sticky-edit,
+        .category-row .sticky-delete {
+            background: #ffffff;
+        }
+
+        .total-row {
+            background: #162b5b;
+            color: white;
+            font-weight: 700;
+            border-top: 3px solid #1e3a8a;
+        }
+
+        .total-row td {
+            padding: 14px 12px;
+            border-right-color: rgba(255, 255, 255, 0.2);
+            border-bottom-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .total-row .sticky-final,
+        .total-row .sticky-edit,
+        .total-row .sticky-delete {
+            background: #ffffff;
+            color: var(--text-dark);
+        }
+
+        .summary-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .summary-primary,
+        .summary-detail {
+            display: grid;
+            gap: 12px;
+        }
+
+        .summary-primary {
+            grid-template-columns: repeat(4, minmax(180px, 1fr));
+        }
+
+        .summary-detail {
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-card.primary {
+            padding: 18px;
+            border-color: #cbd5e1;
+        }
+
+        .summary-card.detail {
+            padding: 12px 14px;
+            background: var(--bg-light);
+        }
+
+        .summary-card.highlight {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .summary-label {
+            font-size: 0.95em;
+            opacity: 0.85;
+            margin-bottom: 8px;
+        }
+
+        .summary-card.detail .summary-label {
+            font-size: 0.82em;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 2em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            text-align: right;
+        }
+
+        .summary-card.detail .summary-value {
+            font-size: 1.15em;
+        }
+
+        .budget-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .budget-preview-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            background: var(--bg-light);
+        }
+
+        .margin-positive {
+            color: #047857;
+        }
+
+        .margin-negative {
+            color: var(--danger);
+        }
+
+        .empty-message {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 0.95em;
+        }
+
+        .dark-mode {
+            --primary: #60a5fa;
+            --primary-light: #93c5fd;
+            --bg-light: #0f172a;
+            --bg-white: #111827;
+            --border: #334155;
+            --text-dark: #e2e8f0;
+            --text-gray: #94a3b8;
+            background-color: #020617;
+            color: #e2e8f0;
+        }
+
+        .dark-mode input,
+        .dark-mode select,
+        .dark-mode .input-section,
+        .dark-mode .table-section,
+        .dark-mode .summary-card,
+        .dark-mode .note {
+            background-color: #111827;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+
+        .dark-mode .header {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .dark-mode .table-title,
+        .dark-mode thead th {
+            background-color: #111827;
+        }
+
+        .dark-mode th:nth-child(14),
+        .dark-mode th:nth-child(15),
+        .dark-mode th:nth-child(16),
+        .dark-mode tbody td:nth-child(14),
+        .dark-mode tbody td:nth-child(15),
+        .dark-mode tbody td:nth-child(16),
+        .dark-mode .sticky-final,
+        .dark-mode .sticky-edit,
+        .dark-mode .sticky-delete {
+            background: #111827;
+        }
+
+        .dark-mode .category-row .sticky-final,
+        .dark-mode .category-row .sticky-edit,
+        .dark-mode .category-row .sticky-delete {
+            background: #111827;
+        }
+
+        .dark-mode .total-row .sticky-final,
+        .dark-mode .total-row .sticky-edit,
+        .dark-mode .total-row .sticky-delete {
+            background: #111827;
+            color: #e2e8f0;
+        }
+
+        @media (max-width: 1024px) {
+            .input-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.82em;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .summary-primary,
+            .summary-detail {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .won-symbol {
+            margin-right: 4px;
+        }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="btn-darkmode" onclick="toggleDarkMode()">다크모드</button>
+            <h1>📹 영상 제작 예산 관리 시스템</h1>
+            <p>프로젝트명, 광고명, 아티스트명을 입력하고 실제 제작 예산을 구성하세요</p>
+            <div class="project-controls">
+                <button class="btn-secondary" onclick="saveProject()">프로젝트 저장</button>
+                <button class="btn-secondary" onclick="loadProject()">프로젝트 불러오기</button>
+                <button class="btn-secondary" onclick="deleteProject()">프로젝트 삭제</button>
+                <button class="btn-secondary" onclick="loadDefaultTemplate(true)">기본 템플릿 적용</button>
+                <button class="btn-secondary" onclick="exportProjectsJson()">JSON 내보내기</button>
+                <button class="btn-secondary" onclick="document.getElementById('projectJsonFile').click()">JSON 가져오기</button>
+                <input type="file" id="projectJsonFile" accept="application/json,.json" onchange="importProjectsJson(event)" style="display:none;">
+                <select id="savedProjects" style="min-width: 220px; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-dark);"></select>
+            </div>
+        </div>
+
+        <div class="view-tabs">
+            <button type="button" class="view-tab active" data-mode="input" onclick="setViewMode('input')">입력 모드</button>
+            <button type="button" class="view-tab" data-mode="full" onclick="setViewMode('full')">전체 보기</button>
+            <button type="button" class="view-tab" data-mode="settlement" onclick="setViewMode('settlement')">정산 보기</button>
+        </div>
+
+        <div class="input-section">
+            <div class="input-title">프로젝트 정보</div>
+            <div class="form-group" style="max-width: 800px;">
+                <label for="projectTitle">프로젝트명 / 광고명 / 아티스트명</label>
+                <input type="text" id="projectTitle" placeholder="예: 2026 봄 캠페인, 아이돌 콘서트" oninput="updateProjectTitle()">
+                <div id="projectPreview" style="margin-top:10px; color: var(--text-gray); font-size:0.95em;">프로젝트명을 입력해주세요.</div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-title">총예산 설정</div>
+            <div class="form-group" style="max-width: 360px;">
+                <label for="contractSupplyAmount">공급가 입력</label>
+                <input type="text" id="contractSupplyAmount" placeholder="100,000,000" oninput="onContractBudgetInput(this)">
+            </div>
+            <div class="budget-preview">
+                <div class="budget-preview-item">
+                    <div class="summary-label">VAT 10%</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="contractVatAmount">0</span></div>
+                </div>
+                <div class="budget-preview-item">
+                    <div class="summary-label">총 계약금액</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="contractTotalAmount">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-title">➕ 예산 항목 추가</div>
+            <div id="editStatus" class="edit-status">새 항목을 입력하세요.</div>
+            <div class="input-grid">
+                <div class="form-group">
+                    <label for="majorCategory">대분류</label>
+                    <select id="majorCategory" onchange="onCategoryChange()">
+                        <option value="">선택하세요</option>
+                        <option value="연출">연출</option>
+                        <option value="제작">제작</option>
+                        <option value="촬영">촬영</option>
+                        <option value="조명">조명</option>
+                        <option value="미술">미술</option>
+                        <option value="식사">식사</option>
+                        <option value="운송">운송</option>
+                        <option value="장비">장비</option>
+                        <option value="후반">후반</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="subCategory">소분류</label>
+                    <select id="subCategory" disabled>
+                        <option value="">대분류를 먼저 선택하세요</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentType">지급유형</label>
+                    <select id="paymentType">
+                        <option value="">선택하세요</option>
+                        <option value="계산서">계산서</option>
+                        <option value="원천징수">원천징수</option>
+                        <option value="카드결제">카드결제</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="staffName">인원명/업체명</label>
+                    <input type="text" id="staffName" placeholder="예: 김감독, ABC촬영팀">
+                </div>
+
+                <div class="form-group">
+                    <label for="unitPrice">페이 (₩)</label>
+                    <input type="text" id="unitPrice" placeholder="500,000" oninput="formatCurrencyInput(this)">
+                </div>
+
+                <div class="form-group" id="shootingDaysGroup">
+                    <label for="shootingDays">촬영일수</label>
+                    <select id="shootingDays">
+                        <option value="1">1일</option>
+                        <option value="2">2일</option>
+                        <option value="3">3일</option>
+                        <option value="4">4일</option>
+                        <option value="5">5일</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="rentalDaysGroup" style="display:none;">
+                    <label for="rentalDays">대여일수</label>
+                    <input type="number" id="rentalDays" placeholder="1" min="1" step="1">
+                </div>
+
+                <div class="form-group" id="peopleCountGroup" style="display:none;">
+                    <label for="peopleCount">인원수</label>
+                    <input type="number" id="peopleCount" placeholder="1" min="1" step="1">
+                </div>
+
+                <div class="form-group" id="overtimeGroup" style="display:none;">
+                    <label for="overtimeHours">추가시간</label>
+                    <input type="number" id="overtimeHours" placeholder="0" min="0" step="0.5">
+                </div>
+
+                <div class="form-group" id="turnkeyGroup" style="display:none;">
+                    <label>턴키 적용</label>
+                    <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="turnkeyMode" onchange="onTurnkeyToggle()"> 턴키</label>
+                </div>
+
+                <div class="form-group" id="additionalAmountGroup">
+                    <label for="additionalAmount">헌팅&미팅 (₩)</label>
+                    <input type="text" id="additionalAmount" placeholder="헌팅&미팅 금액" oninput="formatCurrencyInput(this)">
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>입력 규칙:</strong> 촬영/조명/연출은 촬영일수 + OT, 연출/후반은 턴키 선택 시 고정 페이, 식사는 인원수 × 페이, 장비는 대여일수 × 페이. 카드결제는 VAT/원천징수 미적용입니다.
+            </div>
+
+            <div class="button-group">
+                <button class="btn-reset" onclick="clearForm()">초기화</button>
+                <button class="btn-add" id="submitButton" onclick="submitForm()">항목 추가</button>
+                <button class="btn-secondary" id="cancelEditButton" onclick="cancelEdit()" style="display:none;">수정 취소</button>
+                <button class="btn-add" style="background:#10b981;" onclick="exportExcel()">Excel 내보내기</button>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-title">📊 예산 현황</div>
+            <div class="table-wrapper">
+                <table id="budgetTable">
+                    <colgroup>
+                        <col style="width:64px">
+                        <col style="width:70px">
+                        <col style="width:78px">
+                        <col style="width:170px">
+                        <col style="width:92px">
+                        <col style="width:68px">
+                        <col style="width:60px">
+                        <col style="width:80px">
+                        <col style="width:96px">
+                        <col style="width:96px">
+                        <col style="width:96px">
+                        <col style="width:70px">
+                        <col style="width:96px">
+                        <col style="width:120px">
+                        <col style="width:72px">
+                        <col style="width:72px">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">대분류</th>
+                            <th style="text-align:left;">소분류</th>
+                            <th style="text-align:left;">지급유형</th>
+                            <th style="text-align:left;">인원명/업체명</th>
+                            <th>페이 (₩)</th>
+                            <th>일수/인원</th>
+                            <th>추가시간</th>
+                            <th>헌팅&미팅 (₩)</th>
+                            <th>기본요금 (₩)</th>
+                            <th>추가비용 (₩)</th>
+                            <th>공급가 (₩)</th>
+                            <th>세금(%)</th>
+                            <th>세금액 (₩)</th>
+                            <th class="sticky-final">최종합계 (₩)</th>
+                            <th class="sticky-edit">수정</th>
+                            <th class="sticky-delete">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr style="text-align:center;">
+                            <td colspan="16" class="empty-message">추가한 항목이 없습니다. 위에서 예산 항목을 추가하세요.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <div class="summary-primary">
+                <div class="summary-card primary">
+                    <div class="summary-label">총예산</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="summaryContractTotal">0</span></div>
+                </div>
+                <div class="summary-card primary highlight">
+                    <div class="summary-label">최종 합계</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="grandTotal">0</span></div>
+                </div>
+                <div class="summary-card primary">
+                    <div class="summary-label">예상 마진</div>
+                    <div class="summary-value" id="marginValueWrap"><span class="won-symbol">₩</span><span id="expectedMargin">0</span></div>
+                </div>
+                <div class="summary-card primary">
+                    <div class="summary-label">마진율(%)</div>
+                    <div class="summary-value" id="marginRateWrap"><span id="marginRate">0.0</span>%</div>
+                </div>
+            </div>
+            <div class="summary-detail">
+                <div class="summary-card detail">
+                    <div class="summary-label">제작비 소계</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="subtotal">0</span></div>
+                </div>
+                <div class="summary-card detail">
+                    <div class="summary-label">VAT 합계</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="vatTotal">0</span></div>
+                </div>
+                <div class="summary-card detail">
+                    <div class="summary-label">원천징수 합계</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="withholdingTotal">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settlementSection" class="settlement-section hidden">
+            <div class="table-title">🧾 정산 보고서</div>
+            <div class="settlement-grid">
+                <div class="summary-card">
+                    <div class="summary-label">계산서 총합</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="invoiceTotal">0</span></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">원천징수 총합</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="withholdingTotalSettlement">0</span></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">카드결제 총합</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="cardTotal">0</span></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">VAT 총합</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="vatTotalSettlement">0</span></div>
+                </div>
+                <div class="summary-card highlight">
+                    <div class="summary-label">실 지급 총액</div>
+                    <div class="summary-value"><span class="won-symbol">₩</span><span id="paidTotal">0</span></div>
+                </div>
+            </div>
+            <div class="settlement-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>카테고리</th>
+                            <th>합계</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settlementCategoryBody"></tbody>
+                </table>
+            </div>
+            <div class="settlement-table-wrapper" style="margin-top:20px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>인원명/업체명</th>
+                            <th>실 지급액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settlementPersonBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'productionBudgetState';
+        const PROJECTS_KEY = 'productionBudgetProjects';
+        const categories = ['연출', '제작', '촬영', '조명', '미술', '식사', '운송', '장비', '후반'];
+
+        const subCategoryOrder = {
+            '연출': ['감독', '조감독', '연출팀'],
+            '제작': ['EPD', 'PD', 'LPD'],
+            '촬영': ['감독', '1st', '2nd', '3rd', 'DIT', '그립팀', '지미집', '드론', '장비대'],
+            '조명': ['감독', '1st', '2nd', '3rd', '그립팀', '지미집', '드론', '장비대', '크레인', '발전차'],
+            '미술': ['감독', '팀원', '세트', '소품', '제작'],
+            '후반': ['편집', 'DI', '뷰티', '2D', '3D', '세트클리닝'],
+            '장비': ['대여', '구매']
+        };
+
+        const categoryMap = {
+            '연출': ['감독', '조감독', '연출팀'],
+            '촬영': ['감독', '1st', '2nd', '3rd', 'DIT', '장비대', '지미집', '드론', '그립팀'],
+            '조명': ['감독', '1st', '2nd', '3rd', '장비대', '크레인', '발전차'],
+            '미술': ['감독', '팀원', '세트', '소품', '제작'],
+            '장비': ['구매', '대여'],
+            '후반': ['편집', 'DI', '뷰티', '세트클리닝', '2D', '3D'],
+            '식사': ['도시락', '케이터링', '커피', '야식'],
+            '운송': ['차량', '유류', '주차', '톨비'],
+            '제작': ['EPD', 'PD', 'LPD']
+        };
+
+        function getSubCategoryOrder(category, subCategory) {
+            const order = subCategoryOrder[category] || [];
+            const index = order.indexOf(subCategory);
+            if (index !== -1) return index;
+            return order.length;
+        }
+
+        const defaultTemplate = [
+            { category: '촬영', subCategory: '감독', paymentType: '계산서', staffName: '감독', unitPrice: 1200000, shootingDays: 1 },
+            { category: '촬영', subCategory: '1st', paymentType: '계산서', staffName: '1st', unitPrice: 500000, shootingDays: 1 },
+            { category: '촬영', subCategory: '2nd', paymentType: '계산서', staffName: '2nd', unitPrice: 400000, shootingDays: 1 },
+            { category: '촬영', subCategory: '3rd', paymentType: '계산서', staffName: '3rd', unitPrice: 300000, shootingDays: 1 },
+            { category: '촬영', subCategory: 'DIT', paymentType: '계산서', staffName: 'DIT', unitPrice: 400000, shootingDays: 1 },
+            { category: '조명', subCategory: '감독', paymentType: '계산서', staffName: '감독', unitPrice: 1200000, shootingDays: 1 },
+            { category: '조명', subCategory: '1st', paymentType: '계산서', staffName: '1st', unitPrice: 500000, shootingDays: 1 },
+            { category: '조명', subCategory: '2nd', paymentType: '계산서', staffName: '2nd', unitPrice: 400000, shootingDays: 1 },
+            { category: '조명', subCategory: '3rd', paymentType: '계산서', staffName: '3rd', unitPrice: 300000, shootingDays: 1 },
+            { category: '연출', subCategory: '감독', paymentType: '계산서', staffName: '감독', unitPrice: 4500000, shootingDays: 1 },
+            { category: '연출', subCategory: '조감독', paymentType: '계산서', staffName: '조감독', unitPrice: 3500000, shootingDays: 1 },
+            { category: '제작', subCategory: 'EPD', paymentType: '계산서', staffName: 'EPD', unitPrice: 4500000, shootingDays: 1 },
+            { category: '제작', subCategory: 'PD', paymentType: '계산서', staffName: 'PD', unitPrice: 3800000, shootingDays: 1 },
+            { category: '제작', subCategory: 'LPD', paymentType: '계산서', staffName: 'LPD', unitPrice: 3200000, shootingDays: 1 }
+        ];
+
+        function createPresetItem(preset) {
+            const baseAmount = calculateBaseAmount(preset.category, preset.unitPrice, preset.shootingDays, 0, 0, false);
+            const overtimeAmount = Math.round((preset.unitPrice / 10) * (preset.overtimeHours || 0));
+            const additionalAmount = preset.additionalAmount || 0;
+            const supplyAmount = baseAmount + overtimeAmount + additionalAmount;
+            const vat = preset.paymentType === '계산서' ? Math.round(supplyAmount * 0.10) : 0;
+            const withholding = preset.paymentType === '원천징수' ? Math.round(supplyAmount * 0.033) : 0;
+            return {
+                id: Date.now() + Math.random(),
+                category: preset.category,
+                subCategory: preset.subCategory,
+                paymentType: preset.paymentType,
+                staffName: preset.staffName,
+                unitPrice: preset.unitPrice,
+                shootingDays: preset.shootingDays || 1,
+                rentalDays: preset.rentalDays || 0,
+                peopleCount: preset.peopleCount || 0,
+                overtimeHours: preset.overtimeHours || 0,
+                turnkey: preset.turnkey || false,
+                additionalAmount,
+                baseAmount,
+                overtimeAmount,
+                supplyAmount,
+                vat,
+                withholding,
+                finalAmount: supplyAmount + vat - withholding
+            };
+        }
+
+        function loadDefaultTemplate(force = false) {
+            if (!force && budgetItems.length > 0 && !confirm('현재 예산 항목이 초기화되고 기본 템플릿이 적용됩니다. 계속하시겠습니까?')) {
+                return;
+            }
+            budgetItems = defaultTemplate.map(createPresetItem);
+            saveState();
+            updateTable();
+        }
+
+        function loadDefaultTemplateIfEmpty() {
+            if (budgetItems.length === 0) {
+                loadDefaultTemplate(true);
+            }
+        }
+
+        let budgetItems = []; 
+        let savedProjects = {};
+        let editId = null;
+        let isEditing = false;
+
+        const majorCategoryEl = document.getElementById('majorCategory');
+        const subCategoryEl = document.getElementById('subCategory');
+        const paymentTypeEl = document.getElementById('paymentType');
+        const unitPriceEl = document.getElementById('unitPrice');
+        const shootingDaysGroup = document.getElementById('shootingDaysGroup');
+        const shootingDaysEl = document.getElementById('shootingDays');
+        const rentalDaysGroup = document.getElementById('rentalDaysGroup');
+        const rentalDaysEl = document.getElementById('rentalDays');
+        const peopleCountGroup = document.getElementById('peopleCountGroup');
+        const peopleCountEl = document.getElementById('peopleCount');
+        const overtimeGroup = document.getElementById('overtimeGroup');
+        const overtimeEl = document.getElementById('overtimeHours');
+        const turnkeyGroup = document.getElementById('turnkeyGroup');
+        const turnkeyEl = document.getElementById('turnkeyMode');
+        const additionalAmountEl = document.getElementById('additionalAmount');
+        const submitButton = document.getElementById('submitButton');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        const editStatus = document.getElementById('editStatus');
+        const projectTitleEl = document.getElementById('projectTitle');
+        const projectPreview = document.getElementById('projectPreview');
+        const contractSupplyAmountEl = document.getElementById('contractSupplyAmount');
+        const savedProjectsSelect = document.getElementById('savedProjects');
+        const viewTabs = document.querySelectorAll('.view-tab');
+        const inputSections = document.querySelectorAll('.input-section');
+        const settlementSection = document.getElementById('settlementSection');
+        let currentViewMode = 'input';
+        let contractSupplyAmount = 0;
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            viewTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
+            updateViewMode();
+            saveState();
+        }
+
+        function updateViewMode() {
+            const tableSection = document.querySelector('.table-section');
+            const summarySection = document.querySelector('.summary-section');
+
+            if (currentViewMode === 'input') {
+                inputSections.forEach(el => el.classList.remove('hidden'));
+                tableSection.classList.remove('hidden');
+                summarySection.classList.remove('hidden');
+                settlementSection.classList.add('hidden');
+            } else if (currentViewMode === 'full') {
+                inputSections.forEach(el => el.classList.add('hidden'));
+                tableSection.classList.remove('hidden');
+                summarySection.classList.remove('hidden');
+                settlementSection.classList.add('hidden');
+            } else if (currentViewMode === 'settlement') {
+                inputSections.forEach(el => el.classList.add('hidden'));
+                tableSection.classList.add('hidden');
+                summarySection.classList.add('hidden');
+                settlementSection.classList.remove('hidden');
+            }
+            updateSettlementView();
+        }
+
+        function updateSettlementView() {
+            const invoiceTotal = budgetItems.filter(item => item.paymentType === '계산서').reduce((sum, item) => sum + item.finalAmount, 0);
+            const cardTotal = budgetItems.filter(item => item.paymentType === '카드결제').reduce((sum, item) => sum + item.finalAmount, 0);
+            const vatTotal = budgetItems.reduce((sum, item) => sum + item.vat, 0);
+            const withholdingSum = budgetItems.reduce((sum, item) => sum + item.withholding, 0);
+            const paidTotal = budgetItems.reduce((sum, item) => sum + item.finalAmount, 0);
+
+            document.getElementById('invoiceTotal').textContent = formatCurrency(invoiceTotal);
+            document.getElementById('cardTotal').textContent = formatCurrency(cardTotal);
+            document.getElementById('vatTotalSettlement').textContent = formatCurrency(vatTotal);
+            document.getElementById('withholdingTotalSettlement').textContent = formatCurrency(withholdingSum);
+            document.getElementById('paidTotal').textContent = formatCurrency(paidTotal);
+
+            const categoryMapTotals = {};
+            const personTotals = {};
+            budgetItems.forEach(item => {
+                categoryMapTotals[item.category] = (categoryMapTotals[item.category] || 0) + item.finalAmount;
+                const personKey = item.staffName || '미지정';
+                personTotals[personKey] = (personTotals[personKey] || 0) + item.finalAmount;
+            });
+
+            const categoryBody = document.getElementById('settlementCategoryBody');
+            const personBody = document.getElementById('settlementPersonBody');
+
+            categoryBody.innerHTML = Object.entries(categoryMapTotals)
+                .sort(([a], [b]) => categories.indexOf(a) - categories.indexOf(b))
+                .map(([category, amount]) => `<tr><td>${category}</td><td class="settlement-value">₩${formatCurrency(amount)}</td></tr>`)
+                .join('') || '<tr><td colspan="2">추가된 항목이 없습니다.</td></tr>';
+
+            personBody.innerHTML = Object.entries(personTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, amount]) => `<tr><td>${name}</td><td class="settlement-value">₩${formatCurrency(amount)}</td></tr>`)
+                .join('') || '<tr><td colspan="2">지급 대상이 없습니다.</td></tr>';
+        }
+
+        function updateProjectTitle() {
+            const title = projectTitleEl.value.trim();
+            projectPreview.textContent = title ? `프로젝트명: ${title}` : '프로젝트명을 입력해주세요.';
+            saveState();
+        }
+
+        function onContractBudgetInput(el) {
+            formatCurrencyInput(el);
+            contractSupplyAmount = parseNumberInput(el.value);
+            updateBudgetPreview();
+            updateSummary();
+            saveState();
+        }
+
+        function updateBudgetPreview() {
+            const contractVat = Math.round(contractSupplyAmount * 0.10);
+            const contractTotal = contractSupplyAmount + contractVat;
+            document.getElementById('contractVatAmount').textContent = formatCurrency(contractVat);
+            document.getElementById('contractTotalAmount').textContent = formatCurrency(contractTotal);
+        }
+
+        function onCategoryChange() {
+            const category = majorCategoryEl.value;
+            const subcategories = categoryMap[category] || [];
+            subCategoryEl.innerHTML = '';
+            if (!category) {
+                subCategoryEl.disabled = true;
+                subCategoryEl.innerHTML = '<option value="">대분류를 먼저 선택하세요</option>';
+            } else if (subcategories.length === 0) {
+                subCategoryEl.disabled = true;
+                subCategoryEl.innerHTML = '<option value="-">-</option>';
+            } else {
+                subCategoryEl.disabled = false;
+                subCategoryEl.innerHTML = '<option value="">선택하세요</option>' + subcategories.map(sub => `<option value="${sub}">${sub}</option>`).join('');
+            }
+            updateInputGroups();
+        }
+
+        function updateInputGroups() {
+            const category = majorCategoryEl.value;
+            const subCategory = subCategoryEl.value;
+            shootingDaysGroup.style.display = 'none';
+            rentalDaysGroup.style.display = 'none';
+            peopleCountGroup.style.display = 'none';
+            overtimeGroup.style.display = 'none';
+            turnkeyGroup.style.display = 'none';
+
+            if (['연출', '촬영', '조명', '미술', '제작', '후반', '운송'].includes(category)) {
+                shootingDaysGroup.style.display = 'block';
+            }
+            if (category === '장비') {
+                rentalDaysGroup.style.display = 'block';
+            }
+            if (category === '식사') {
+                peopleCountGroup.style.display = 'block';
+            }
+            if (['연출', '촬영', '조명', '미술', '제작', '후반', '운송'].includes(category)) {
+                overtimeGroup.style.display = 'block';
+            }
+            if (category === '후반' || category === '연출' || category === '제작') {
+                turnkeyGroup.style.display = 'block';
+            }
+            onTurnkeyToggle();
+        }
+
+        function onTurnkeyToggle() {
+            if ((majorCategoryEl.value === '후반' || majorCategoryEl.value === '연출' || majorCategoryEl.value === '제작') && turnkeyEl.checked) {
+                shootingDaysGroup.style.display = 'none';
+            } else if (majorCategoryEl.value === '후반' || majorCategoryEl.value === '연출' || majorCategoryEl.value === '제작') {
+                shootingDaysGroup.style.display = 'block';
+            }
+        }
+
+        function formatCurrencyInput(el) {
+            const numeric = el.value.replace(/[^0-9]/g, '');
+            el.value = numeric ? Number(numeric).toLocaleString('ko-KR') : '';
+        }
+
+        function parseNumberInput(value) {
+            return Number(String(value).replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function submitForm() {
+            const item = buildItemFromForm();
+            if (!item) return;
+            if (isEditing) {
+                const index = budgetItems.findIndex(i => i.id === editId);
+                if (index !== -1) {
+                    budgetItems[index] = item;
+                }
+                isEditing = false;
+                editId = null;
+                submitButton.textContent = '항목 추가';
+                cancelEditButton.style.display = 'none';
+                editStatus.textContent = '수정이 완료되었습니다.';
+            } else {
+                budgetItems.push(item);
+                editStatus.textContent = '새 항목이 추가되었습니다.';
+            }
+            saveState();
+            updateTable();
+            clearForm();
+        }
+
+        function buildItemFromForm() {
+            const category = majorCategoryEl.value;
+            const subCategory = subCategoryEl.disabled ? '-' : subCategoryEl.value;
+            const paymentType = paymentTypeEl.value;
+            const staffName = document.getElementById('staffName').value.trim();
+            const unitPrice = parseNumberInput(unitPriceEl.value);
+            const shootingDays = Number(shootingDaysEl.value) || 0;
+            const rentalDays = Number(rentalDaysEl.value) || 0;
+            const peopleCount = Number(peopleCountEl.value) || 0;
+            const overtimeHours = Number(overtimeEl.value) || 0;
+            const turnkey = turnkeyEl.checked;
+            const additionalAmount = parseNumberInput(additionalAmountEl.value);
+
+            if (!category || !paymentType || !staffName || unitPrice <= 0) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return null;
+            }
+            if (!subCategory && !subCategoryEl.disabled) {
+                alert('소분류를 선택해주세요.');
+                return null;
+            }
+            if (category === '식사' && peopleCount <= 0) {
+                alert('식사 항목은 인원수를 입력해주세요.');
+                return null;
+            }
+            if (category === '장비' && rentalDays <= 0) {
+                alert('장비 항목은 대여일수를 입력해주세요.');
+                return null;
+            }
+            if (['연출', '촬영', '조명', '미술', '제작', '후반', '운송'].includes(category) && !(category === '후반' && turnkey) && !(category === '연출' && turnkey) && shootingDays <= 0) {
+                alert('촬영일수를 선택해주세요.');
+                return null;
+            }
+
+            const baseAmount = calculateBaseAmount(category, unitPrice, shootingDays, rentalDays, peopleCount, turnkey);
+            const overtimeAmount = Math.round((unitPrice / 10) * overtimeHours);
+            const supplyAmount = baseAmount + overtimeAmount + additionalAmount;
+            const vat = paymentType === '계산서' ? Math.round(supplyAmount * 0.10) : 0;
+            const withholding = paymentType === '원천징수' ? Math.round(supplyAmount * 0.033) : 0;
+            const finalAmount = supplyAmount + vat - withholding;
+            const id = editId || Date.now();
+
+            return {
+                id,
+                category,
+                subCategory,
+                paymentType,
+                staffName,
+                unitPrice,
+                shootingDays,
+                rentalDays,
+                peopleCount,
+                overtimeHours,
+                turnkey,
+                additionalAmount,
+                baseAmount,
+                overtimeAmount,
+                supplyAmount,
+                vat,
+                withholding,
+                finalAmount
+            };
+        }
+
+        function calculateBaseAmount(category, unitPrice, shootingDays, rentalDays, peopleCount, turnkey) {
+            if (category === '식사') {
+                return unitPrice * peopleCount;
+            }
+            if (category === '장비') {
+                return unitPrice * rentalDays;
+            }
+            if ((category === '후반' || category === '연출') && turnkey) {
+                return unitPrice;
+            }
+            return unitPrice * shootingDays;
+        }
+
+        function clearForm() {
+            majorCategoryEl.value = '';
+            subCategoryEl.innerHTML = '<option value="">대분류를 먼저 선택하세요</option>';
+            subCategoryEl.disabled = true;
+            paymentTypeEl.value = '';
+            document.getElementById('staffName').value = '';
+            unitPriceEl.value = '';
+            shootingDaysEl.value = '1';
+            rentalDaysEl.value = '';
+            peopleCountEl.value = '';
+            overtimeEl.value = '';
+            turnkeyEl.checked = false;
+            additionalAmountEl.value = '';
+            isEditing = false;
+            editId = null;
+            submitButton.textContent = '항목 추가';
+            cancelEditButton.style.display = 'none';
+            editStatus.textContent = '새 항목을 입력하세요.';
+            updateInputGroups();
+        }
+
+        function editItem(id) {
+            const item = budgetItems.find(row => row.id === id);
+            if (!item) return;
+            majorCategoryEl.value = item.category;
+            onCategoryChange();
+            if (!subCategoryEl.disabled) subCategoryEl.value = item.subCategory;
+            paymentTypeEl.value = item.paymentType;
+            document.getElementById('staffName').value = item.staffName;
+            unitPriceEl.value = formatCurrency(item.unitPrice);
+            shootingDaysEl.value = item.shootingDays || '1';
+            rentalDaysEl.value = item.rentalDays || '';
+            peopleCountEl.value = item.peopleCount || '';
+            overtimeEl.value = item.overtimeHours;
+            turnkeyEl.checked = item.turnkey;
+            additionalAmountEl.value = getAdditionalAmount(item) ? formatCurrency(getAdditionalAmount(item)) : '';
+            updateInputGroups();
+            onTurnkeyToggle();
+            isEditing = true;
+            editId = id;
+            submitButton.textContent = '수정 저장';
+            cancelEditButton.style.display = 'inline-flex';
+            editStatus.textContent = `수정 중: ${item.category} / ${item.subCategory} / ${item.staffName}`;
+        }
+
+        function cancelEdit() {
+            clearForm();
+        }
+
+        function deleteItem(id) {
+            if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+            budgetItems = budgetItems.filter(item => item.id !== id);
+            saveState();
+            updateTable();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            if (budgetItems.length === 0) {
+                tbody.innerHTML = '<tr style="text-align:center;"><td colspan="16" class="empty-message">추가한 항목이 없습니다. 위에서 예산 항목을 추가하세요.</td></tr>';
+                updateSummary();
+                return;
+            }
+
+            const sortedItems = [...budgetItems].sort((a, b) => {
+                const categoryIndex = categories.indexOf(a.category) - categories.indexOf(b.category);
+                if (categoryIndex !== 0) return categoryIndex;
+                const aOrder = getSubCategoryOrder(a.category, a.subCategory);
+                const bOrder = getSubCategoryOrder(b.category, b.subCategory);
+                if (aOrder !== bOrder) return aOrder - bOrder;
+                return a.subCategory.localeCompare(b.subCategory);
+            });
+
+            let html = '';
+            let currentCategory = null;
+            const categoryTotals = {};
+            const renderSummaryRow = (label, amount, rowClass) => `
+                <tr class="${rowClass}">
+                    <td><strong>${label}</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="sticky-final"><strong>${formatCurrency(amount)}</strong></td>
+                    <td class="sticky-edit"></td>
+                    <td class="sticky-delete"></td>
+                </tr>
+            `;
+
+            sortedItems.forEach(item => {
+                categoryTotals[item.category] = (categoryTotals[item.category] || 0) + item.finalAmount;
+            });
+
+            sortedItems.forEach(item => {
+                if (item.category !== currentCategory) {
+                    if (currentCategory !== null) {
+                        html += renderSummaryRow(`${currentCategory} 소계`, categoryTotals[currentCategory], 'category-row');
+                    }
+                    currentCategory = item.category;
+                }
+                html += `
+                    <tr>
+                        <td>${item.category}</td>
+                        <td>${item.subCategory || '-'}</td>
+                        <td>${item.paymentType}</td>
+                        <td>${item.staffName}</td>
+                        <td>${formatCurrency(item.unitPrice)}</td>
+                        <td>${renderCountLabel(item)}</td>
+                        <td>${item.overtimeHours > 0 ? item.overtimeHours + '시간' : '-'}</td>
+                        <td>${getAdditionalAmount(item) ? formatCurrency(getAdditionalAmount(item)) : '-'}</td>
+                        <td>${formatCurrency(item.baseAmount)}</td>
+                        <td>${formatCurrency(item.overtimeAmount)}</td>
+                        <td>${formatCurrency(item.supplyAmount)}</td>
+                        <td>${item.paymentType === '계산서' ? '10%' : item.paymentType === '원천징수' ? '3.3%' : '0%'}</td>
+                        <td>${formatCurrency(getTaxAmount(item))}</td>
+                        <td class="sticky-final">${formatCurrency(item.finalAmount)}</td>
+                        <td class="sticky-edit"><button class="btn-edit" onclick="editItem(${item.id})">수정</button></td>
+                        <td class="sticky-delete"><button class="btn-delete" onclick="deleteItem(${item.id})">삭제</button></td>
+                    </tr>
+                `;
+            });
+
+            if (currentCategory !== null) {
+                html += renderSummaryRow(`${currentCategory} 소계`, categoryTotals[currentCategory], 'category-row');
+            }
+
+            const totalFinal = budgetItems.reduce((sum, item) => sum + item.finalAmount, 0);
+            html += renderSummaryRow('제작비 최종 합계', totalFinal, 'total-row');
+            tbody.innerHTML = html;
+            updateSummary();
+            updateSettlementView();
+        }
+
+        function renderCountLabel(item) {
+            if (item.category === '식사') return `${item.peopleCount}명`;
+            if (item.category === '장비') return `${item.rentalDays}일`;
+            if (item.category === '후반' && item.turnkey) return '턴키';
+            return `${item.shootingDays}일`;
+        }
+
+        function getAdditionalAmount(item) {
+            if (typeof item.additionalAmount === 'number') return item.additionalAmount;
+            return (item.huntingAmount || 0) + (item.meetingFee || 0);
+        }
+
+        function getTaxAmount(item) {
+            if (item.paymentType === '계산서') return item.vat || 0;
+            if (item.paymentType === '원천징수') return item.withholding || 0;
+            return 0;
+        }
+
+        function updateSummary() {
+            const subtotal = budgetItems.reduce((sum, item) => sum + item.supplyAmount, 0);
+            const vatTotal = budgetItems.reduce((sum, item) => sum + item.vat, 0);
+            const withholdingTotal = budgetItems.reduce((sum, item) => sum + item.withholding, 0);
+            const grandTotal = budgetItems.reduce((sum, item) => sum + item.finalAmount, 0);
+            const contractVat = Math.round(contractSupplyAmount * 0.10);
+            const contractTotal = contractSupplyAmount + contractVat;
+            const expectedMargin = contractTotal - grandTotal;
+            const marginRate = contractTotal > 0 ? (expectedMargin / contractTotal) * 100 : 0;
+            document.getElementById('subtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('vatTotal').textContent = formatCurrency(vatTotal);
+            document.getElementById('withholdingTotal').textContent = formatCurrency(withholdingTotal);
+            document.getElementById('grandTotal').textContent = formatCurrency(grandTotal);
+            document.getElementById('summaryContractTotal').textContent = formatCurrency(contractTotal);
+            document.getElementById('expectedMargin').textContent = formatCurrency(expectedMargin);
+            document.getElementById('marginRate').textContent = marginRate.toFixed(1);
+
+            const marginClass = expectedMargin < 0 ? 'margin-negative' : 'margin-positive';
+            ['marginValueWrap', 'marginRateWrap'].forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.remove('margin-positive', 'margin-negative');
+                element.classList.add(marginClass);
+            });
+        }
+
+        function exportExcel() {
+            if (budgetItems.length === 0) {
+                alert('내보낼 예산 항목이 없습니다.');
+                return;
+            }
+
+            const title = projectTitleEl.value.trim() || '프로젝트 예산';
+            const wb = XLSX.utils.book_new();
+            const categoriesPresent = [...new Set(budgetItems.map(item => item.category))];
+
+            categoriesPresent.forEach(category => {
+                const items = budgetItems.filter(item => item.category === category);
+                const wsData = [
+                    ['카테고리', '소분류', '지급유형', '인원명/업체명', '페이', '일수/인원', '추가시간', '헌팅&미팅', '기본요금', '추가비용', '공급가', '세금(%)', '세금액', '최종합계']
+                ];
+                let categoryFinal = 0;
+
+                items.forEach(item => {
+                    wsData.push([
+                        item.category,
+                        item.subCategory || '-',
+                        item.paymentType,
+                        item.staffName,
+                        item.unitPrice,
+                        renderCountLabel(item),
+                        item.overtimeHours > 0 ? item.overtimeHours : '-',
+                        getAdditionalAmount(item) ? getAdditionalAmount(item) : '-',
+                        item.baseAmount,
+                        item.overtimeAmount,
+                        item.supplyAmount,
+                        item.paymentType === '계산서' ? '10%' : item.paymentType === '원천징수' ? '3.3%' : '0%',
+                        getTaxAmount(item),
+                        item.finalAmount
+                    ]);
+                    categoryFinal += item.finalAmount;
+                });
+                wsData.push([]);
+                wsData.push(['', '', '', '', '', '', '', '', '', '', '소계', '', '', categoryFinal]);
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = ws[cellRef];
+                        if (!cell) continue;
+                        if ([4, 7, 8, 9, 10, 12, 13].includes(C) && typeof cell.v === 'number') {
+                            cell.z = '₩#,##0';
+                        }
+                    }
+                }
+                ws['!cols'] = Array(14).fill({ wch: 14 });
+                XLSX.utils.book_append_sheet(wb, ws, category);
+            });
+
+            const summaryRows = [
+                ['프로젝트명', title],
+                [],
+                ['항목', '금액'],
+                ['제작비 소계', budgetItems.reduce((sum, item) => sum + item.supplyAmount, 0)],
+                ['VAT 합계', budgetItems.reduce((sum, item) => sum + item.vat, 0)],
+                ['원천징수 합계', budgetItems.reduce((sum, item) => sum + item.withholding, 0)],
+                ['최종 합계', budgetItems.reduce((sum, item) => sum + item.finalAmount, 0)]
+            ];
+            const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+            XLSX.utils.book_append_sheet(wb, summarySheet, '요약');
+            XLSX.writeFile(wb, `${title.replace(/[/\\?%*:|"<>]/g, '')}_생산예산.xlsx`);
+        }
+
+        function saveProject() {
+            const title = projectTitleEl.value.trim();
+            if (!title) {
+                alert('저장할 프로젝트명을 입력해주세요.');
+                return;
+            }
+            savedProjects[title] = {
+                title,
+                items: budgetItems,
+                projectTitle: title,
+                contractSupplyAmount,
+                darkMode: document.body.classList.contains('dark-mode')
+            };
+            localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
+            loadSavedProjects();
+            alert('프로젝트가 저장되었습니다.');
+        }
+
+        function loadProject() {
+            const selected = savedProjectsSelect.value;
+            if (!selected) {
+                alert('불러올 프로젝트를 선택해주세요.');
+                return;
+            }
+            const project = savedProjects[selected];
+            if (!project) return;
+            projectTitleEl.value = project.projectTitle;
+            projectPreview.textContent = `프로젝트명: ${project.projectTitle}`;
+            contractSupplyAmount = Number(project.contractSupplyAmount) || 0;
+            contractSupplyAmountEl.value = contractSupplyAmount ? formatCurrency(contractSupplyAmount) : '';
+            budgetItems = project.items || [];
+            updateBudgetPreview();
+            updateTable();
+            saveState();
+            setDarkMode(!!project.darkMode);
+            alert('프로젝트가 불러와졌습니다.');
+        }
+
+        function deleteProject() {
+            const selected = savedProjectsSelect.value;
+            if (!selected) {
+                alert('삭제할 프로젝트를 선택해주세요.');
+                return;
+            }
+            if (!confirm(`${selected} 프로젝트를 삭제하시겠습니까?`)) return;
+            delete savedProjects[selected];
+            localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
+            loadSavedProjects();
+            alert('프로젝트가 삭제되었습니다.');
+        }
+
+        function exportProjectsJson() {
+            loadSavedProjects();
+            const projectNames = Object.keys(savedProjects);
+            if (projectNames.length === 0) {
+                alert('내보낼 저장 프로젝트가 없습니다.');
+                return;
+            }
+
+            const currentTitle = projectTitleEl.value.trim();
+            const fallbackName = projectNames.length === 1 ? projectNames[0] : 'all_projects';
+            const fileBaseName = sanitizeFileName(currentTitle || fallbackName);
+            const backup = {
+                exportedAt: new Date().toISOString(),
+                app: 'productionBudget',
+                version: 1,
+                projects: savedProjects
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileBaseName}_budget_backup.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function importProjectsJson(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    const importedProjects = parsed.projects || parsed;
+                    if (!importedProjects || typeof importedProjects !== 'object' || Array.isArray(importedProjects)) {
+                        throw new Error('Invalid project backup');
+                    }
+
+                    loadSavedProjects();
+                    savedProjects = { ...savedProjects, ...importedProjects };
+                    localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
+                    loadSavedProjects();
+                    alert(`${Object.keys(importedProjects).length}개 프로젝트를 가져왔습니다.`);
+                } catch (error) {
+                    alert('프로젝트 JSON 파일을 가져오지 못했습니다. 파일 형식을 확인해주세요.');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function sanitizeFileName(name) {
+            return (name || 'projects').replace(/[/\\?%*:|"<>]/g, '').trim() || 'projects';
+        }
+
+        function loadSavedProjects() {
+            const raw = localStorage.getItem(PROJECTS_KEY);
+            savedProjects = raw ? JSON.parse(raw) : {};
+            savedProjectsSelect.innerHTML = '<option value="">저장된 프로젝트 선택</option>' + Object.keys(savedProjects).map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        function saveState() {
+            const state = {
+                projectTitle: projectTitleEl.value,
+                items: budgetItems,
+                contractSupplyAmount,
+                darkMode: document.body.classList.contains('dark-mode'),
+                viewMode: currentViewMode
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function loadState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const state = JSON.parse(raw);
+            if (state.projectTitle) {
+                projectTitleEl.value = state.projectTitle;
+                projectPreview.textContent = `프로젝트명: ${state.projectTitle}`;
+            }
+            if (Array.isArray(state.items)) {
+                budgetItems = state.items;
+            }
+            contractSupplyAmount = Number(state.contractSupplyAmount) || 0;
+            contractSupplyAmountEl.value = contractSupplyAmount ? formatCurrency(contractSupplyAmount) : '';
+            if (state.darkMode) setDarkMode(true);
+            currentViewMode = state.viewMode || 'input';
+            updateBudgetPreview();
+        }
+
+        function toggleDarkMode() {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        }
+
+        function setDarkMode(enabled) {
+            document.body.classList.toggle('dark-mode', enabled);
+            const button = document.querySelector('.btn-darkmode');
+            if (button) button.textContent = enabled ? '라이트모드' : '다크모드';
+            saveState();
+        }
+
+        window.addEventListener('beforeunload', saveState);
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('ko-KR').format(Math.round(value));
+        }
+
+        function init() {
+            loadSavedProjects();
+            loadState();
+            loadDefaultTemplateIfEmpty();
+            onCategoryChange();
+            updateTable();
+            setViewMode(currentViewMode);
+        }
+
+        init();
+    </script>
+</body>
+</html>
