@@ -925,14 +925,9 @@
                 <button class="btn-secondary" onclick="loadProject()">프로젝트 불러오기</button>
                 <button class="btn-secondary admin-only" onclick="renameProject()">프로젝트 이름 변경</button>
                 <button class="btn-secondary admin-only" onclick="deleteProject()">프로젝트 삭제</button>
-                <button class="btn-secondary admin-only" onclick="archiveProject()">프로젝트 아카이브</button>
-                <button class="btn-secondary admin-only" onclick="duplicateProject()">프로젝트 복제</button>
                 <button class="btn-secondary admin-only" onclick="loadDefaultTemplate(true)">기본 템플릿 적용</button>
                 <button class="btn-secondary admin-only" onclick="migrateLocalToSupabase()">현재 데이터 Supabase 업로드</button>
-                <button class="btn-secondary" onclick="testSupabaseConnection()">Supabase 연결 테스트</button>
                 <button class="btn-secondary" onclick="exportProjectsJson()">JSON 내보내기</button>
-                <button class="btn-secondary" onclick="exportCurrentProjectJson()">자동 백업(JSON)</button>
-                <button class="btn-secondary" onclick="showProjectHistory()">수정 로그</button>
                 <button class="btn-secondary admin-only" onclick="document.getElementById('projectJsonFile').click()">JSON 가져오기</button>
                 <input type="file" id="projectJsonFile" accept="application/json,.json" onchange="importProjectsJson(event)" style="display:none;">
                 <input type="search" id="projectSearch" placeholder="프로젝트 검색" oninput="loadSavedProjects()" style="min-width: 180px; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-dark);">
@@ -1209,13 +1204,10 @@
         const STORAGE_KEY = 'productionBudgetState';
         const PROJECTS_KEY = 'productionBudgetProjects';
         const LAST_PROJECT_ID_KEY = 'productionBudgetLastProjectId';
-        const HISTORY_KEY = 'productionBudgetHistory';
-        const USER_NAME_KEY = 'productionBudgetUserName';
         const SUPABASE_URL = 'https://zxmzzrcgulawsffaobaj.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_q2HCDDvgTgumPazVrN0Acw_RQ3IYWPx';
         const SUPABASE_PROJECTS_TABLE = 'projects';
         const SUPABASE_ITEMS_TABLE = 'budget_items';
-        const SUPABASE_HISTORY_TABLE = 'project_history';
         const urlParams = new URLSearchParams(window.location.search);
         const isViewOnly = urlParams.get('mode') === 'view';
         const projectIdFromUrl = urlParams.get('project');
@@ -1316,7 +1308,6 @@
             saveState();
             updateTable();
             saveCurrentProjectToSupabase();
-            recordProjectHistory('기본 템플릿 적용');
         }
 
         function loadDefaultTemplateIfEmpty() {
@@ -1534,7 +1525,6 @@
             }
             const item = buildItemFromForm();
             if (!item) return;
-            const historyAction = isEditing ? '예산 항목 수정' : '예산 항목 추가';
             if (isEditing) {
                 const index = budgetItems.findIndex(i => String(i.id) === String(editId));
                 if (index !== -1) {
@@ -1552,7 +1542,6 @@
             saveState();
             updateTable();
             saveCurrentProjectToSupabase();
-            recordProjectHistory(historyAction);
             clearForm();
         }
 
@@ -1693,7 +1682,6 @@
             saveState();
             updateTable();
             saveCurrentProjectToSupabase();
-            recordProjectHistory('예산 항목 삭제');
         }
 
         function updateTable() {
@@ -1958,7 +1946,6 @@
                 contract_supply_amount: contractSupplyAmount || 0,
                 dark_mode: document.body.classList.contains('dark-mode'),
                 view_mode: currentViewMode,
-                archived: false,
                 updated_at: updatedAt
             };
         }
@@ -2038,7 +2025,6 @@
                 contractSupplyAmount: Number(project.contract_supply_amount) || 0,
                 darkMode: !!project.dark_mode,
                 supabaseProjectId: project.id,
-                archived: !!project.archived,
                 updatedAt: project.updated_at || new Date().toISOString()
             };
             localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
@@ -2054,49 +2040,9 @@
                 contractSupplyAmount,
                 darkMode: document.body.classList.contains('dark-mode'),
                 supabaseProjectId: activeProjectId,
-                archived: false,
                 updatedAt: new Date().toISOString()
             };
             localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
-        }
-
-        function getActorName() {
-            let name = localStorage.getItem(USER_NAME_KEY) || '';
-            if (!name.trim() && !isViewOnly) {
-                name = prompt('수정 로그에 남길 이름을 입력해주세요.', '') || '이름 없음';
-                localStorage.setItem(USER_NAME_KEY, name.trim() || '이름 없음');
-            }
-            return name.trim() || '이름 없음';
-        }
-
-        function loadLocalHistory() {
-            try {
-                return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            } catch (error) {
-                return [];
-            }
-        }
-
-        function saveLocalHistory(history) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
-        }
-
-        async function recordProjectHistory(action, projectName = getProjectTitle()) {
-            const entry = {
-                id: makeId(),
-                project_id: activeProjectId || '',
-                project_name: projectName || '새 프로젝트',
-                actor_name: getActorName(),
-                action,
-                created_at: new Date().toISOString()
-            };
-            const history = [entry, ...loadLocalHistory()];
-            saveLocalHistory(history);
-            if (!supabaseClient || !isSupabaseConnected) return;
-            const { error } = await supabaseClient.from(SUPABASE_HISTORY_TABLE).insert(entry);
-            if (error) {
-                console.error('Project history save error:', error);
-            }
         }
 
         function queueProjectSync() {
@@ -2315,7 +2261,6 @@
             await saveCurrentProjectToSupabase();
             await loadSupabaseProjects();
             subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory('새 프로젝트 생성', name.trim());
             alert('새 프로젝트가 생성되었습니다.');
         }
 
@@ -2339,137 +2284,7 @@
             saveState();
             await syncProjectMeta();
             await loadSupabaseProjects();
-            await recordProjectHistory('프로젝트 이름 변경', nextName.trim());
             alert('프로젝트 이름이 변경되었습니다.');
-        }
-
-        async function testSupabaseConnection() {
-            if (!supabaseClient) {
-                alert('Supabase 라이브러리가 아직 연결되지 않았습니다.');
-                setConnectionLost();
-                return;
-            }
-            setSyncStatus('Supabase 테스트 중...', 'saving');
-            const { error } = await supabaseClient
-                .from(SUPABASE_PROJECTS_TABLE)
-                .select('id')
-                .limit(1);
-            if (error) {
-                console.error('Supabase connection test error:', error);
-                setConnectionLost();
-                alert('Supabase 연결 실패: 테이블 설정 또는 네트워크를 확인해주세요.');
-                return;
-            }
-            isSupabaseConnected = true;
-            setSyncStatus('Supabase 연결 정상', 'saved');
-            alert('Supabase 연결이 정상입니다.');
-        }
-
-        function exportCurrentProjectJson() {
-            const title = projectTitleEl.value.trim() || 'current_project';
-            const backup = {
-                exportedAt: new Date().toISOString(),
-                app: 'productionBudget',
-                version: 2,
-                project: {
-                    id: activeProjectId,
-                    title,
-                    projectTitle: title,
-                    contractSupplyAmount,
-                    darkMode: document.body.classList.contains('dark-mode'),
-                    items: budgetItems
-                }
-            };
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${sanitizeFileName(title)}_project_backup.json`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-        }
-
-        async function duplicateProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 복제할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 복제할 프로젝트를 열어주세요.');
-                return;
-            }
-            const sourceName = projectTitleEl.value.trim() || '프로젝트';
-            const nextName = prompt('복제할 프로젝트명을 입력해주세요.', `${sourceName} 복사본`);
-            if (!nextName || !nextName.trim()) return;
-            activeProjectId = makeId();
-            localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-            updateProjectUrl(activeProjectId);
-            projectTitleEl.value = nextName.trim();
-            projectPreview.textContent = `프로젝트명: ${nextName.trim()}`;
-            budgetItems = budgetItems.map(item => ({ ...item, id: makeId() }));
-            updateTable();
-            saveState();
-            await saveCurrentProjectToSupabase();
-            await loadSupabaseProjects();
-            subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory(`프로젝트 복제: ${sourceName}`, nextName.trim());
-            alert('프로젝트가 복제되었습니다.');
-        }
-
-        async function archiveProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 아카이브할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 아카이브할 프로젝트를 열어주세요.');
-                return;
-            }
-            const title = projectTitleEl.value.trim() || '현재 프로젝트';
-            if (!confirm(`${title} 프로젝트를 아카이브하시겠습니까? 목록에서 숨겨집니다.`)) return;
-            if (supabaseClient && isSupabaseConnected) {
-                const { error } = await supabaseClient
-                    .from(SUPABASE_PROJECTS_TABLE)
-                    .update({ archived: true, updated_at: new Date().toISOString() })
-                    .eq('id', activeProjectId);
-                if (error) {
-                    console.error('Archive project error:', error);
-                    setConnectionLost();
-                }
-            }
-            if (savedProjects[title]) {
-                savedProjects[title].archived = true;
-                savedProjects[title].updatedAt = new Date().toISOString();
-                localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
-            }
-            await recordProjectHistory('프로젝트 아카이브', title);
-            loadSavedProjects();
-            alert('프로젝트가 아카이브되었습니다.');
-        }
-
-        async function showProjectHistory() {
-            let history = loadLocalHistory();
-            if (supabaseClient && isSupabaseConnected && activeProjectId) {
-                const { data, error } = await supabaseClient
-                    .from(SUPABASE_HISTORY_TABLE)
-                    .select('*')
-                    .eq('project_id', activeProjectId)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-                if (!error && Array.isArray(data)) {
-                    history = data;
-                }
-            }
-            const rows = history
-                .filter(entry => !activeProjectId || !entry.project_id || entry.project_id === activeProjectId)
-                .slice(0, 10)
-                .map(entry => {
-                    const when = entry.created_at ? new Date(entry.created_at).toLocaleString('ko-KR') : '-';
-                    return `${when}\n${entry.actor_name || '이름 없음'} / ${entry.project_name || '-'} / ${entry.action || '수정'}`;
-                });
-            alert(rows.length ? rows.join('\n\n') : '표시할 수정 로그가 없습니다.');
         }
 
         async function initSupabase() {
@@ -2526,7 +2341,6 @@
             await saveCurrentProjectToSupabase();
             await loadSupabaseProjects();
             subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory('프로젝트 저장', title);
             alert('프로젝트가 저장되었습니다.');
         }
 
@@ -2596,7 +2410,6 @@
                 localStorage.removeItem(LAST_PROJECT_ID_KEY);
                 clearProjectUrl();
             }
-            await recordProjectHistory('프로젝트 삭제', selected);
             alert('프로젝트가 삭제되었습니다.');
         }
 
@@ -2650,7 +2463,6 @@
                     savedProjects = { ...savedProjects, ...importedProjects };
                     localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
                     loadSavedProjects();
-                    recordProjectHistory('JSON 가져오기', '프로젝트 백업');
                     alert(`${Object.keys(importedProjects).length}개 프로젝트를 가져왔습니다.`);
                 } catch (error) {
                     alert('프로젝트 JSON 파일을 가져오지 못했습니다. 파일 형식을 확인해주세요.');
@@ -2674,7 +2486,6 @@
             }
             const query = (projectSearchEl && projectSearchEl.value ? projectSearchEl.value : '').trim().toLowerCase();
             const projectNames = Object.keys(savedProjects)
-                .filter(name => !savedProjects[name].archived)
                 .filter(name => !query || name.toLowerCase().includes(query))
                 .sort((a, b) => {
                     const aTime = Date.parse(savedProjects[a].updatedAt || 0) || 0;

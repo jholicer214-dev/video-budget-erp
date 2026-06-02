@@ -1,7 +1,0 @@
-.next
-next-build
-node_modules
-.env.local
-.env*.local
-out
-dist

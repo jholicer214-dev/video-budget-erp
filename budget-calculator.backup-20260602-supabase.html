@@ -252,28 +252,6 @@
             font-weight: 700;
         }
 
-        .sync-status.saving {
-            background: rgba(245, 158, 11, 0.22);
-            border-color: rgba(245, 158, 11, 0.42);
-        }
-
-        .sync-status.saved {
-            background: rgba(16, 185, 129, 0.22);
-            border-color: rgba(16, 185, 129, 0.42);
-        }
-
-        .sync-status.offline {
-            background: rgba(239, 68, 68, 0.22);
-            border-color: rgba(239, 68, 68, 0.42);
-        }
-
-        .readonly-mode .budget-entry-section,
-        .readonly-mode .btn-edit,
-        .readonly-mode .btn-delete,
-        .readonly-mode .admin-only {
-            display: none !important;
-        }
-
         .view-tabs {
             display: flex;
             flex-wrap: wrap;
@@ -854,17 +832,6 @@
             .input-grid {
                 grid-template-columns: 1fr 1fr;
             }
-
-            .project-controls {
-                align-items: stretch;
-            }
-
-            .project-controls button,
-            .project-controls input,
-            .project-controls select,
-            .project-controls .sync-status {
-                min-height: 42px;
-            }
         }
 
         @media (max-width: 768px) {
@@ -878,18 +845,6 @@
 
             button {
                 width: 100%;
-            }
-
-            .project-controls {
-                flex-direction: column;
-            }
-
-            .project-controls button,
-            .project-controls input,
-            .project-controls select,
-            .project-controls .sync-status {
-                width: 100%;
-                min-width: 0 !important;
             }
 
             table {
@@ -920,22 +875,13 @@
             <h1>📹 영상 제작 예산 관리 시스템</h1>
             <p>프로젝트명, 광고명, 아티스트명을 입력하고 실제 제작 예산을 구성하세요</p>
             <div class="project-controls">
-                <button class="btn-secondary admin-only" onclick="createNewProject()">새 프로젝트 생성</button>
-                <button class="btn-secondary admin-only" onclick="saveProject()">프로젝트 저장</button>
+                <button class="btn-secondary" onclick="saveProject()">프로젝트 저장</button>
                 <button class="btn-secondary" onclick="loadProject()">프로젝트 불러오기</button>
-                <button class="btn-secondary admin-only" onclick="renameProject()">프로젝트 이름 변경</button>
-                <button class="btn-secondary admin-only" onclick="deleteProject()">프로젝트 삭제</button>
-                <button class="btn-secondary admin-only" onclick="archiveProject()">프로젝트 아카이브</button>
-                <button class="btn-secondary admin-only" onclick="duplicateProject()">프로젝트 복제</button>
-                <button class="btn-secondary admin-only" onclick="loadDefaultTemplate(true)">기본 템플릿 적용</button>
-                <button class="btn-secondary admin-only" onclick="migrateLocalToSupabase()">현재 데이터 Supabase 업로드</button>
-                <button class="btn-secondary" onclick="testSupabaseConnection()">Supabase 연결 테스트</button>
+                <button class="btn-secondary" onclick="deleteProject()">프로젝트 삭제</button>
+                <button class="btn-secondary" onclick="loadDefaultTemplate(true)">기본 템플릿 적용</button>
                 <button class="btn-secondary" onclick="exportProjectsJson()">JSON 내보내기</button>
-                <button class="btn-secondary" onclick="exportCurrentProjectJson()">자동 백업(JSON)</button>
-                <button class="btn-secondary" onclick="showProjectHistory()">수정 로그</button>
-                <button class="btn-secondary admin-only" onclick="document.getElementById('projectJsonFile').click()">JSON 가져오기</button>
+                <button class="btn-secondary" onclick="document.getElementById('projectJsonFile').click()">JSON 가져오기</button>
                 <input type="file" id="projectJsonFile" accept="application/json,.json" onchange="importProjectsJson(event)" style="display:none;">
-                <input type="search" id="projectSearch" placeholder="프로젝트 검색" oninput="loadSavedProjects()" style="min-width: 180px; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-dark);">
                 <select id="savedProjects" style="min-width: 220px; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-dark);"></select>
                 <span id="syncStatus" class="sync-status">Supabase 연결 대기</span>
             </div>
@@ -974,7 +920,7 @@
             </div>
         </div>
 
-        <div class="input-section budget-entry-section">
+        <div class="input-section">
             <div class="input-title">➕ 예산 항목 추가</div>
             <div id="editStatus" class="edit-status">새 항목을 입력하세요.</div>
             <div class="input-grid">
@@ -1208,17 +1154,10 @@
     <script>
         const STORAGE_KEY = 'productionBudgetState';
         const PROJECTS_KEY = 'productionBudgetProjects';
-        const LAST_PROJECT_ID_KEY = 'productionBudgetLastProjectId';
-        const HISTORY_KEY = 'productionBudgetHistory';
-        const USER_NAME_KEY = 'productionBudgetUserName';
         const SUPABASE_URL = 'https://zxmzzrcgulawsffaobaj.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_q2HCDDvgTgumPazVrN0Acw_RQ3IYWPx';
-        const SUPABASE_PROJECTS_TABLE = 'projects';
-        const SUPABASE_ITEMS_TABLE = 'budget_items';
-        const SUPABASE_HISTORY_TABLE = 'project_history';
-        const urlParams = new URLSearchParams(window.location.search);
-        const isViewOnly = urlParams.get('mode') === 'view';
-        const projectIdFromUrl = urlParams.get('project');
+        const SUPABASE_TABLE = 'budget_items';
+        const SUPABASE_SHARED_ID = 'shared-budget';
         const categories = ['연출', '제작', '촬영', '조명', '미술', '식사', '운송', '장비', '후반'];
 
         const subCategoryOrder = {
@@ -1301,27 +1240,15 @@
         }
 
         function loadDefaultTemplate(force = false) {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 기본 템플릿을 적용할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 새 프로젝트를 생성하거나 기존 프로젝트를 열어주세요.');
-                return;
-            }
             if (!force && budgetItems.length > 0 && !confirm('현재 예산 항목이 초기화되고 기본 템플릿이 적용됩니다. 계속하시겠습니까?')) {
                 return;
             }
             budgetItems = defaultTemplate.map(createPresetItem);
             saveState();
             updateTable();
-            saveCurrentProjectToSupabase();
-            recordProjectHistory('기본 템플릿 적용');
         }
 
         function loadDefaultTemplateIfEmpty() {
-            if (isViewOnly) return;
-            if (!activeProjectId) return;
             if (budgetItems.length === 0) {
                 loadDefaultTemplate(true);
             }
@@ -1333,15 +1260,8 @@
         let isEditing = false;
         let supabaseClient = null;
         let supabaseChannel = null;
-        let supabaseProjectChannel = null;
-        let projectSyncTimer = null;
-        let activeProjectId = null;
+        let supabaseSyncTimer = null;
         let isApplyingRemoteState = false;
-        let lastLocalProjectUpdatedAt = 0;
-        let lastLocalItemsUpdatedAt = 0;
-        let lastRemoteProjectUpdatedAt = 0;
-        let lastRemoteItemsUpdatedAt = 0;
-        let isSupabaseConnected = false;
 
         const majorCategoryEl = document.getElementById('majorCategory');
         const subCategoryEl = document.getElementById('subCategory');
@@ -1366,7 +1286,6 @@
         const contractSupplyAmountEl = document.getElementById('contractSupplyAmount');
         const savedProjectsSelect = document.getElementById('savedProjects');
         const syncStatusEl = document.getElementById('syncStatus');
-        const projectSearchEl = document.getElementById('projectSearch');
         const viewTabs = document.querySelectorAll('.view-tab');
         const inputSections = document.querySelectorAll('.input-section');
         const settlementSection = document.getElementById('settlementSection');
@@ -1524,19 +1443,10 @@
         }
 
         function submitForm() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 항목을 수정할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 새 프로젝트를 생성하거나 기존 프로젝트를 열어주세요.');
-                return;
-            }
             const item = buildItemFromForm();
             if (!item) return;
-            const historyAction = isEditing ? '예산 항목 수정' : '예산 항목 추가';
             if (isEditing) {
-                const index = budgetItems.findIndex(i => String(i.id) === String(editId));
+                const index = budgetItems.findIndex(i => i.id === editId);
                 if (index !== -1) {
                     budgetItems[index] = item;
                 }
@@ -1551,8 +1461,6 @@
             }
             saveState();
             updateTable();
-            saveCurrentProjectToSupabase();
-            recordProjectHistory(historyAction);
             clearForm();
         }
 
@@ -1596,7 +1504,7 @@
             const vat = paymentType === '계산서' ? Math.round(supplyAmount * 0.10) : 0;
             const withholding = paymentType === '원천징수' ? Math.round(supplyAmount * 0.033) : 0;
             const finalAmount = supplyAmount + vat - withholding;
-            const id = editId || makeId();
+            const id = editId || Date.now();
 
             return {
                 id,
@@ -1655,8 +1563,7 @@
         }
 
         function editItem(id) {
-            if (isViewOnly) return;
-            const item = budgetItems.find(row => String(row.id) === String(id));
+            const item = budgetItems.find(row => row.id === id);
             if (!item) return;
             majorCategoryEl.value = item.category;
             onCategoryChange();
@@ -1684,16 +1591,10 @@
         }
 
         function deleteItem(id) {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 항목을 삭제할 수 없습니다.');
-                return;
-            }
             if (!confirm('이 항목을 삭제하시겠습니까?')) return;
-            budgetItems = budgetItems.filter(item => String(item.id) !== String(id));
+            budgetItems = budgetItems.filter(item => item.id !== id);
             saveState();
             updateTable();
-            saveCurrentProjectToSupabase();
-            recordProjectHistory('예산 항목 삭제');
         }
 
         function updateTable() {
@@ -1764,8 +1665,8 @@
                         <td>${item.paymentType === '계산서' ? '10%' : item.paymentType === '원천징수' ? '3.3%' : '0%'}</td>
                         <td>${formatCurrency(getTaxAmount(item))}</td>
                         <td class="sticky-final">${formatCurrency(item.finalAmount)}</td>
-                        <td class="sticky-edit"><button class="btn-edit" onclick='editItem(${JSON.stringify(String(item.id))})'>수정</button></td>
-                        <td class="sticky-delete"><button class="btn-delete" onclick='deleteItem(${JSON.stringify(String(item.id))})'>삭제</button></td>
+                        <td class="sticky-edit"><button class="btn-edit" onclick="editItem(${item.id})">수정</button></td>
+                        <td class="sticky-delete"><button class="btn-delete" onclick="deleteItem(${item.id})">삭제</button></td>
                     </tr>
                 `;
             });
@@ -1892,584 +1793,134 @@
             XLSX.writeFile(wb, `${title.replace(/[/\\?%*:|"<>]/g, '')}_생산예산.xlsx`);
         }
 
-        function setSyncStatus(message, type = '') {
-            if (!syncStatusEl) return;
-            syncStatusEl.textContent = message;
-            syncStatusEl.classList.remove('saving', 'saved', 'offline');
-            if (type) syncStatusEl.classList.add(type);
+        function setSyncStatus(message) {
+            if (syncStatusEl) syncStatusEl.textContent = message;
         }
 
-        function setSavePending() {
-            setSyncStatus('저장 중...', 'saving');
-        }
-
-        function setSaveComplete() {
-            setSyncStatus('저장 완료', 'saved');
-        }
-
-        function setConnectionLost() {
-            isSupabaseConnected = false;
-            setSyncStatus('연결 끊김 - localStorage 임시 저장', 'offline');
-        }
-
-        function getLatestUpdatedAt(rows) {
-            return (rows || []).reduce((latest, row) => Math.max(latest, Date.parse(row.updated_at || 0) || 0), 0);
-        }
-
-        function makeId() {
-            return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-        }
-
-        function ensureProjectId() {
-            if (!activeProjectId) {
-                activeProjectId = makeId();
-                localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-                updateProjectUrl(activeProjectId);
-            }
-            return activeProjectId;
-        }
-
-        function updateProjectUrl(projectId) {
-            if (!projectId) return;
-            const nextParams = new URLSearchParams(window.location.search);
-            nextParams.set('project', projectId);
-            const nextUrl = `${window.location.pathname}?${nextParams.toString()}`;
-            window.history.replaceState(null, '', nextUrl);
-        }
-
-        function clearProjectUrl() {
-            const nextParams = new URLSearchParams(window.location.search);
-            nextParams.delete('project');
-            const query = nextParams.toString();
-            const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-            window.history.replaceState(null, '', nextUrl);
-        }
-
-        function getProjectTitle() {
-            return projectTitleEl.value.trim() || '새 프로젝트';
-        }
-
-        function getProjectRow() {
-            const updatedAt = new Date().toISOString();
-            lastLocalProjectUpdatedAt = Date.parse(updatedAt);
+        function getCurrentState() {
             return {
-                id: ensureProjectId(),
-                name: getProjectTitle(),
-                contract_supply_amount: contractSupplyAmount || 0,
-                dark_mode: document.body.classList.contains('dark-mode'),
-                view_mode: currentViewMode,
-                archived: false,
-                updated_at: updatedAt
-            };
-        }
-
-        function getItemRow(item, index = 0) {
-            const updatedAt = new Date().toISOString();
-            return {
-                id: String(item.id || makeId()),
-                project_id: ensureProjectId(),
-                category: item.category || '',
-                sub_category: item.subCategory || '',
-                payment_type: item.paymentType || '',
-                staff_name: item.staffName || '',
-                unit_price: Number(item.unitPrice) || 0,
-                shooting_days: Number(item.shootingDays) || 0,
-                rental_days: Number(item.rentalDays) || 0,
-                people_count: Number(item.peopleCount) || 0,
-                overtime_hours: Number(item.overtimeHours) || 0,
-                turnkey: !!item.turnkey,
-                additional_amount: getAdditionalAmount(item),
-                base_amount: Number(item.baseAmount) || 0,
-                overtime_amount: Number(item.overtimeAmount) || 0,
-                supply_amount: Number(item.supplyAmount) || 0,
-                vat: Number(item.vat) || 0,
-                withholding: Number(item.withholding) || 0,
-                final_amount: Number(item.finalAmount) || 0,
-                display_order: index,
-                updated_at: updatedAt
-            };
-        }
-
-        function getItemFromRow(row) {
-            return {
-                id: row.id,
-                category: row.category || '',
-                subCategory: row.sub_category || '',
-                paymentType: row.payment_type || '',
-                staffName: row.staff_name || '',
-                unitPrice: Number(row.unit_price) || 0,
-                shootingDays: Number(row.shooting_days) || 0,
-                rentalDays: Number(row.rental_days) || 0,
-                peopleCount: Number(row.people_count) || 0,
-                overtimeHours: Number(row.overtime_hours) || 0,
-                turnkey: !!row.turnkey,
-                additionalAmount: Number(row.additional_amount) || 0,
-                baseAmount: Number(row.base_amount) || 0,
-                overtimeAmount: Number(row.overtime_amount) || 0,
-                supplyAmount: Number(row.supply_amount) || 0,
-                vat: Number(row.vat) || 0,
-                withholding: Number(row.withholding) || 0,
-                finalAmount: Number(row.final_amount) || 0
-            };
-        }
-
-        function applyProjectRow(project) {
-            if (!project) return;
-            lastRemoteProjectUpdatedAt = Math.max(lastRemoteProjectUpdatedAt, Date.parse(project.updated_at || 0) || 0);
-            activeProjectId = project.id;
-            localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-            updateProjectUrl(activeProjectId);
-            projectTitleEl.value = project.name || '';
-            projectPreview.textContent = project.name ? `프로젝트명: ${project.name}` : '프로젝트명을 입력해주세요.';
-            contractSupplyAmount = Number(project.contract_supply_amount) || 0;
-            contractSupplyAmountEl.value = contractSupplyAmount ? formatCurrency(contractSupplyAmount) : '';
-            currentViewMode = project.view_mode || currentViewMode || 'input';
-            applyDarkModeUI(!!project.dark_mode);
-            updateBudgetPreview();
-        }
-
-        function rememberProject(project) {
-            if (!project || !project.name) return;
-            const existing = savedProjects[project.name] || {};
-            savedProjects[project.name] = {
-                ...existing,
-                title: project.name,
-                projectTitle: project.name,
-                contractSupplyAmount: Number(project.contract_supply_amount) || 0,
-                darkMode: !!project.dark_mode,
-                supabaseProjectId: project.id,
-                archived: !!project.archived,
-                updatedAt: project.updated_at || new Date().toISOString()
-            };
-            localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
-        }
-
-        function rememberCurrentProjectLocally() {
-            const title = projectTitleEl.value.trim();
-            if (!title) return;
-            savedProjects[title] = {
-                title,
-                projectTitle: title,
+                projectTitle: projectTitleEl.value,
                 items: budgetItems,
                 contractSupplyAmount,
                 darkMode: document.body.classList.contains('dark-mode'),
-                supabaseProjectId: activeProjectId,
-                archived: false,
-                updatedAt: new Date().toISOString()
+                viewMode: currentViewMode,
+                savedProjects
             };
+        }
+
+        function applyState(state, fromRemote = false) {
+            isApplyingRemoteState = fromRemote;
+            projectTitleEl.value = state.projectTitle || '';
+            projectPreview.textContent = state.projectTitle ? `프로젝트명: ${state.projectTitle}` : '프로젝트명을 입력해주세요.';
+            budgetItems = Array.isArray(state.items) ? state.items : [];
+            savedProjects = state.savedProjects && typeof state.savedProjects === 'object' ? state.savedProjects : {};
+            contractSupplyAmount = Number(state.contractSupplyAmount) || 0;
+            contractSupplyAmountEl.value = contractSupplyAmount ? formatCurrency(contractSupplyAmount) : '';
+            currentViewMode = state.viewMode || 'input';
+            applyDarkModeUI(!!state.darkMode);
             localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
-        }
-
-        function getActorName() {
-            let name = localStorage.getItem(USER_NAME_KEY) || '';
-            if (!name.trim() && !isViewOnly) {
-                name = prompt('수정 로그에 남길 이름을 입력해주세요.', '') || '이름 없음';
-                localStorage.setItem(USER_NAME_KEY, name.trim() || '이름 없음');
-            }
-            return name.trim() || '이름 없음';
-        }
-
-        function loadLocalHistory() {
-            try {
-                return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            } catch (error) {
-                return [];
-            }
-        }
-
-        function saveLocalHistory(history) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
-        }
-
-        async function recordProjectHistory(action, projectName = getProjectTitle()) {
-            const entry = {
-                id: makeId(),
-                project_id: activeProjectId || '',
-                project_name: projectName || '새 프로젝트',
-                actor_name: getActorName(),
-                action,
-                created_at: new Date().toISOString()
-            };
-            const history = [entry, ...loadLocalHistory()];
-            saveLocalHistory(history);
-            if (!supabaseClient || !isSupabaseConnected) return;
-            const { error } = await supabaseClient.from(SUPABASE_HISTORY_TABLE).insert(entry);
-            if (error) {
-                console.error('Project history save error:', error);
-            }
-        }
-
-        function queueProjectSync() {
-            if (isViewOnly || isApplyingRemoteState || !activeProjectId) return;
-            if (!supabaseClient || !isSupabaseConnected) {
-                setConnectionLost();
-                return;
-            }
-            clearTimeout(projectSyncTimer);
-            projectSyncTimer = setTimeout(syncProjectMeta, 500);
-        }
-
-        async function syncProjectMeta() {
-            if (isViewOnly || isApplyingRemoteState || !supabaseClient || !activeProjectId) return;
-            setSavePending();
-            const project = getProjectRow();
-            const { error } = await supabaseClient.from(SUPABASE_PROJECTS_TABLE).upsert(project, { onConflict: 'id' });
-            if (error) {
-                console.error('Supabase project sync error:', error);
-                setConnectionLost();
-                return;
-            }
-            isSupabaseConnected = true;
-            rememberProject(project);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                projectTitle: projectTitleEl.value,
+                items: budgetItems,
+                contractSupplyAmount,
+                darkMode: document.body.classList.contains('dark-mode'),
+                viewMode: currentViewMode
+            }));
             loadSavedProjects();
-            setSaveComplete();
-        }
-
-        async function syncAllItems() {
-            if (isViewOnly || isApplyingRemoteState || !supabaseClient || !activeProjectId) return;
-            setSavePending();
-            lastLocalItemsUpdatedAt = Date.now();
-            const rows = budgetItems.map(getItemRow);
-            const { error: deleteError } = await supabaseClient
-                .from(SUPABASE_ITEMS_TABLE)
-                .delete()
-                .eq('project_id', activeProjectId);
-            if (deleteError) {
-                console.error('Supabase item delete error:', deleteError);
-                setConnectionLost();
-                return;
-            }
-            if (rows.length > 0) {
-                const { error: insertError } = await supabaseClient.from(SUPABASE_ITEMS_TABLE).insert(rows);
-                if (insertError) {
-                    console.error('Supabase item insert error:', insertError);
-                    setConnectionLost();
-                    return;
-                }
-            }
-            isSupabaseConnected = true;
-            setSaveComplete();
-        }
-
-        async function saveCurrentProjectToSupabase() {
-            if (isViewOnly) return;
-            if (!supabaseClient || !isSupabaseConnected) {
-                setConnectionLost();
-                return;
-            }
-            ensureProjectId();
-            await syncProjectMeta();
-            await syncAllItems();
-        }
-
-        async function loadSupabaseProjects() {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient
-                .from(SUPABASE_PROJECTS_TABLE)
-                .select('*')
-                .order('updated_at', { ascending: false });
-            if (error) {
-                console.error('Supabase projects load error:', error);
-                setConnectionLost();
-                loadSavedProjects();
-                return;
-            }
-            isSupabaseConnected = true;
-            (data || []).forEach(rememberProject);
-            loadSavedProjects();
-        }
-
-        async function loadSupabaseProject(projectId) {
-            if (!supabaseClient || !projectId) return false;
-            setSyncStatus('프로젝트 불러오는 중');
-            const { data: project, error: projectError } = await supabaseClient
-                .from(SUPABASE_PROJECTS_TABLE)
-                .select('*')
-                .eq('id', projectId)
-                .maybeSingle();
-            if (projectError || !project) {
-                console.error('Supabase project load error:', projectError);
-                setConnectionLost();
-                return false;
-            }
-            const { data: items, error: itemsError } = await supabaseClient
-                .from(SUPABASE_ITEMS_TABLE)
-                .select('*')
-                .eq('project_id', projectId)
-                .order('display_order', { ascending: true });
-            if (itemsError) {
-                console.error('Supabase items load error:', itemsError);
-                setConnectionLost();
-                return false;
-            }
-            isSupabaseConnected = true;
-            isApplyingRemoteState = true;
-            applyProjectRow(project);
-            rememberProject(project);
-            budgetItems = (items || []).map(getItemFromRow);
-            lastRemoteItemsUpdatedAt = Math.max(lastRemoteItemsUpdatedAt, getLatestUpdatedAt(items));
+            updateBudgetPreview();
             updateTable();
             setViewMode(currentViewMode);
-            saveState();
-            subscribeSupabaseRealtime(projectId);
             isApplyingRemoteState = false;
-            applyAccessMode();
-            setSyncStatus(isViewOnly ? '읽기 전용 동기화됨' : '저장 완료', 'saved');
-            return true;
         }
 
-        function subscribeSupabaseRealtime(projectId) {
-            if (!supabaseClient || !projectId) return;
+        function getSupabaseRowFromState() {
+            const state = getCurrentState();
+            return {
+                id: SUPABASE_SHARED_ID,
+                project_title: state.projectTitle || '',
+                contract_supply_amount: state.contractSupplyAmount || 0,
+                items: state.items,
+                saved_projects: state.savedProjects,
+                dark_mode: state.darkMode,
+                view_mode: state.viewMode,
+                updated_at: new Date().toISOString()
+            };
+        }
+
+        function getStateFromSupabaseRow(row) {
+            return {
+                projectTitle: row.project_title || '',
+                items: Array.isArray(row.items) ? row.items : [],
+                contractSupplyAmount: Number(row.contract_supply_amount) || 0,
+                darkMode: !!row.dark_mode,
+                viewMode: row.view_mode || 'input',
+                savedProjects: row.saved_projects && typeof row.saved_projects === 'object' ? row.saved_projects : {}
+            };
+        }
+
+        function queueSupabaseSync() {
+            if (isApplyingRemoteState || !supabaseClient) return;
+            clearTimeout(supabaseSyncTimer);
+            supabaseSyncTimer = setTimeout(syncSupabaseState, 450);
+        }
+
+        async function syncSupabaseState() {
+            if (!supabaseClient || isApplyingRemoteState) return;
+            setSyncStatus('Supabase 저장 중');
+            const { error } = await supabaseClient
+                .from(SUPABASE_TABLE)
+                .upsert(getSupabaseRowFromState(), { onConflict: 'id' });
+
+            if (error) {
+                console.error('Supabase sync error:', error);
+                setSyncStatus('Supabase 저장 실패');
+                return;
+            }
+            setSyncStatus('Supabase 동기화됨');
+        }
+
+        async function loadSupabaseState() {
+            if (!supabaseClient) return;
+            setSyncStatus('Supabase 불러오는 중');
+            const { data, error } = await supabaseClient
+                .from(SUPABASE_TABLE)
+                .select('*')
+                .eq('id', SUPABASE_SHARED_ID)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Supabase load error:', error);
+                setSyncStatus('Supabase 연결 실패');
+                return;
+            }
+
+            if (data) {
+                applyState(getStateFromSupabaseRow(data), true);
+                setSyncStatus('Supabase 동기화됨');
+            } else {
+                await syncSupabaseState();
+            }
+        }
+
+        function subscribeSupabaseRealtime() {
+            if (!supabaseClient) return;
             if (supabaseChannel) supabaseClient.removeChannel(supabaseChannel);
-            if (supabaseProjectChannel) supabaseClient.removeChannel(supabaseProjectChannel);
             supabaseChannel = supabaseClient
-                .channel(`budget-items-${projectId}`)
+                .channel('budget-items-realtime')
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
-                    table: SUPABASE_ITEMS_TABLE,
-                    filter: `project_id=eq.${projectId}`
-                }, async payload => {
-                    if (isApplyingRemoteState) return;
-                    const { data, error } = await supabaseClient
-                        .from(SUPABASE_ITEMS_TABLE)
-                        .select('*')
-                        .eq('project_id', projectId)
-                        .order('display_order', { ascending: true });
-                    if (error) {
-                        console.error('Realtime items refresh error:', error);
-                        return;
-                    }
-                    const eventUpdatedAt = Date.parse((payload.new || payload.old || {}).updated_at || 0) || Date.now();
-                    const remoteUpdatedAt = Math.max(getLatestUpdatedAt(data), eventUpdatedAt);
-                    if (payload.eventType !== 'DELETE' && remoteUpdatedAt < Math.max(lastRemoteItemsUpdatedAt, lastLocalItemsUpdatedAt)) return;
-                    isApplyingRemoteState = true;
-                    budgetItems = (data || []).map(getItemFromRow);
-                    lastRemoteItemsUpdatedAt = remoteUpdatedAt;
-                    updateTable();
-                    saveState();
-                    isApplyingRemoteState = false;
-                    setSyncStatus('실시간 항목 반영됨');
-                })
-                .subscribe();
-            supabaseProjectChannel = supabaseClient
-                .channel(`budget-project-${projectId}`)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: SUPABASE_PROJECTS_TABLE,
-                    filter: `id=eq.${projectId}`
+                    table: SUPABASE_TABLE,
+                    filter: `id=eq.${SUPABASE_SHARED_ID}`
                 }, payload => {
-                    if (!payload.new || isApplyingRemoteState) return;
-                    const remoteUpdatedAt = Date.parse(payload.new.updated_at || 0) || 0;
-                    if (remoteUpdatedAt < Math.max(lastRemoteProjectUpdatedAt, lastLocalProjectUpdatedAt)) return;
-                    isApplyingRemoteState = true;
-                    applyProjectRow(payload.new);
-                    updateSummary();
-                    saveState();
-                    isApplyingRemoteState = false;
-                    setSyncStatus('실시간 프로젝트 반영됨');
+                    if (payload.eventType === 'DELETE') return;
+                    if (!payload.new) return;
+                    applyState(getStateFromSupabaseRow(payload.new), true);
+                    setSyncStatus('실시간 반영됨');
                 })
-                .subscribe();
-        }
-
-        async function migrateLocalToSupabase() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 업로드할 수 없습니다.');
-                return;
-            }
-            if (!supabaseClient) {
-                alert('Supabase 연결 후 다시 시도해주세요.');
-                return;
-            }
-            if (!projectTitleEl.value.trim()) {
-                alert('프로젝트명을 먼저 입력해주세요.');
-                return;
-            }
-            if (!confirm('현재 화면의 프로젝트와 예산 항목을 Supabase로 업로드하시겠습니까?')) return;
-            ensureProjectId();
-            await saveCurrentProjectToSupabase();
-            await loadSupabaseProjects();
-            subscribeSupabaseRealtime(activeProjectId);
-            alert('현재 데이터가 Supabase로 업로드되었습니다.');
-        }
-
-        async function createNewProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 새 프로젝트를 생성할 수 없습니다.');
-                return;
-            }
-            const name = prompt('새 프로젝트명을 입력해주세요.', '');
-            if (!name || !name.trim()) return;
-            activeProjectId = makeId();
-            localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-            updateProjectUrl(activeProjectId);
-            projectTitleEl.value = name.trim();
-            projectPreview.textContent = `프로젝트명: ${name.trim()}`;
-            contractSupplyAmount = 0;
-            contractSupplyAmountEl.value = '';
-            budgetItems = [];
-            updateBudgetPreview();
-            updateTable();
-            saveState();
-            await saveCurrentProjectToSupabase();
-            await loadSupabaseProjects();
-            subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory('새 프로젝트 생성', name.trim());
-            alert('새 프로젝트가 생성되었습니다.');
-        }
-
-        async function renameProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트 이름을 변경할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 프로젝트를 생성하거나 불러와주세요.');
-                return;
-            }
-            const previousName = projectTitleEl.value.trim();
-            const nextName = prompt('변경할 프로젝트명을 입력해주세요.', previousName);
-            if (!nextName || !nextName.trim() || nextName.trim() === previousName) return;
-            if (previousName && savedProjects[previousName]) {
-                delete savedProjects[previousName];
-            }
-            projectTitleEl.value = nextName.trim();
-            projectPreview.textContent = `프로젝트명: ${nextName.trim()}`;
-            saveState();
-            await syncProjectMeta();
-            await loadSupabaseProjects();
-            await recordProjectHistory('프로젝트 이름 변경', nextName.trim());
-            alert('프로젝트 이름이 변경되었습니다.');
-        }
-
-        async function testSupabaseConnection() {
-            if (!supabaseClient) {
-                alert('Supabase 라이브러리가 아직 연결되지 않았습니다.');
-                setConnectionLost();
-                return;
-            }
-            setSyncStatus('Supabase 테스트 중...', 'saving');
-            const { error } = await supabaseClient
-                .from(SUPABASE_PROJECTS_TABLE)
-                .select('id')
-                .limit(1);
-            if (error) {
-                console.error('Supabase connection test error:', error);
-                setConnectionLost();
-                alert('Supabase 연결 실패: 테이블 설정 또는 네트워크를 확인해주세요.');
-                return;
-            }
-            isSupabaseConnected = true;
-            setSyncStatus('Supabase 연결 정상', 'saved');
-            alert('Supabase 연결이 정상입니다.');
-        }
-
-        function exportCurrentProjectJson() {
-            const title = projectTitleEl.value.trim() || 'current_project';
-            const backup = {
-                exportedAt: new Date().toISOString(),
-                app: 'productionBudget',
-                version: 2,
-                project: {
-                    id: activeProjectId,
-                    title,
-                    projectTitle: title,
-                    contractSupplyAmount,
-                    darkMode: document.body.classList.contains('dark-mode'),
-                    items: budgetItems
-                }
-            };
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${sanitizeFileName(title)}_project_backup.json`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-        }
-
-        async function duplicateProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 복제할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 복제할 프로젝트를 열어주세요.');
-                return;
-            }
-            const sourceName = projectTitleEl.value.trim() || '프로젝트';
-            const nextName = prompt('복제할 프로젝트명을 입력해주세요.', `${sourceName} 복사본`);
-            if (!nextName || !nextName.trim()) return;
-            activeProjectId = makeId();
-            localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-            updateProjectUrl(activeProjectId);
-            projectTitleEl.value = nextName.trim();
-            projectPreview.textContent = `프로젝트명: ${nextName.trim()}`;
-            budgetItems = budgetItems.map(item => ({ ...item, id: makeId() }));
-            updateTable();
-            saveState();
-            await saveCurrentProjectToSupabase();
-            await loadSupabaseProjects();
-            subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory(`프로젝트 복제: ${sourceName}`, nextName.trim());
-            alert('프로젝트가 복제되었습니다.');
-        }
-
-        async function archiveProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 아카이브할 수 없습니다.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 아카이브할 프로젝트를 열어주세요.');
-                return;
-            }
-            const title = projectTitleEl.value.trim() || '현재 프로젝트';
-            if (!confirm(`${title} 프로젝트를 아카이브하시겠습니까? 목록에서 숨겨집니다.`)) return;
-            if (supabaseClient && isSupabaseConnected) {
-                const { error } = await supabaseClient
-                    .from(SUPABASE_PROJECTS_TABLE)
-                    .update({ archived: true, updated_at: new Date().toISOString() })
-                    .eq('id', activeProjectId);
-                if (error) {
-                    console.error('Archive project error:', error);
-                    setConnectionLost();
-                }
-            }
-            if (savedProjects[title]) {
-                savedProjects[title].archived = true;
-                savedProjects[title].updatedAt = new Date().toISOString();
-                localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
-            }
-            await recordProjectHistory('프로젝트 아카이브', title);
-            loadSavedProjects();
-            alert('프로젝트가 아카이브되었습니다.');
-        }
-
-        async function showProjectHistory() {
-            let history = loadLocalHistory();
-            if (supabaseClient && isSupabaseConnected && activeProjectId) {
-                const { data, error } = await supabaseClient
-                    .from(SUPABASE_HISTORY_TABLE)
-                    .select('*')
-                    .eq('project_id', activeProjectId)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-                if (!error && Array.isArray(data)) {
-                    history = data;
-                }
-            }
-            const rows = history
-                .filter(entry => !activeProjectId || !entry.project_id || entry.project_id === activeProjectId)
-                .slice(0, 10)
-                .map(entry => {
-                    const when = entry.created_at ? new Date(entry.created_at).toLocaleString('ko-KR') : '-';
-                    return `${when}\n${entry.actor_name || '이름 없음'} / ${entry.project_name || '-'} / ${entry.action || '수정'}`;
+                .subscribe(status => {
+                    if (status === 'SUBSCRIBED') setSyncStatus('Supabase 실시간 연결됨');
                 });
-            alert(rows.length ? rows.join('\n\n') : '표시할 수정 로그가 없습니다.');
         }
 
         async function initSupabase() {
@@ -2478,38 +1929,14 @@
                 return;
             }
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            setSyncStatus(isViewOnly ? '읽기 전용 연결 중' : 'Supabase 연결 중');
-            await loadSupabaseProjects();
-            const lastProjectId = projectIdFromUrl || localStorage.getItem(LAST_PROJECT_ID_KEY);
-            if (lastProjectId) {
-                await loadSupabaseProject(lastProjectId);
-            } else {
-                setSyncStatus(isViewOnly ? '읽기 전용 대기' : 'Supabase 연결됨');
-            }
+            subscribeSupabaseRealtime();
+            await loadSupabaseState();
         }
 
-        function applyAccessMode() {
-            document.body.classList.toggle('readonly-mode', isViewOnly);
-            if (!isViewOnly) return;
-            document.querySelectorAll('input, select, textarea').forEach(element => {
-                if (['savedProjects', 'projectSearch'].includes(element.id)) return;
-                element.disabled = true;
-            });
-            setSyncStatus('읽기 전용 모드');
-        }
-
-        async function saveProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 저장할 수 없습니다.');
-                return;
-            }
+        function saveProject() {
             const title = projectTitleEl.value.trim();
             if (!title) {
                 alert('저장할 프로젝트명을 입력해주세요.');
-                return;
-            }
-            if (!activeProjectId) {
-                alert('먼저 새 프로젝트를 생성하거나 기존 프로젝트를 열어주세요.');
                 return;
             }
             savedProjects[title] = {
@@ -2517,20 +1944,15 @@
                 items: budgetItems,
                 projectTitle: title,
                 contractSupplyAmount,
-                darkMode: document.body.classList.contains('dark-mode'),
-                supabaseProjectId: activeProjectId,
-                updatedAt: new Date().toISOString()
+                darkMode: document.body.classList.contains('dark-mode')
             };
             localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
             loadSavedProjects();
-            await saveCurrentProjectToSupabase();
-            await loadSupabaseProjects();
-            subscribeSupabaseRealtime(activeProjectId);
-            await recordProjectHistory('프로젝트 저장', title);
+            queueSupabaseSync();
             alert('프로젝트가 저장되었습니다.');
         }
 
-        async function loadProject() {
+        function loadProject() {
             const selected = savedProjectsSelect.value;
             if (!selected) {
                 alert('불러올 프로젝트를 선택해주세요.');
@@ -2538,18 +1960,8 @@
             }
             const project = savedProjects[selected];
             if (!project) return;
-            if (project.supabaseProjectId && supabaseClient) {
-                const loaded = await loadSupabaseProject(project.supabaseProjectId);
-                if (loaded) {
-                    alert('프로젝트가 불러와졌습니다.');
-                    return;
-                }
-            }
             projectTitleEl.value = project.projectTitle;
             projectPreview.textContent = `프로젝트명: ${project.projectTitle}`;
-            activeProjectId = project.supabaseProjectId || makeId();
-            localStorage.setItem(LAST_PROJECT_ID_KEY, activeProjectId);
-            updateProjectUrl(activeProjectId);
             contractSupplyAmount = Number(project.contractSupplyAmount) || 0;
             contractSupplyAmountEl.value = contractSupplyAmount ? formatCurrency(contractSupplyAmount) : '';
             budgetItems = project.items || [];
@@ -2557,46 +1969,20 @@
             updateTable();
             saveState();
             setDarkMode(!!project.darkMode);
-            applyAccessMode();
             alert('프로젝트가 불러와졌습니다.');
         }
 
-        async function deleteProject() {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 프로젝트를 삭제할 수 없습니다.');
-                return;
-            }
+        function deleteProject() {
             const selected = savedProjectsSelect.value;
             if (!selected) {
                 alert('삭제할 프로젝트를 선택해주세요.');
                 return;
             }
             if (!confirm(`${selected} 프로젝트를 삭제하시겠습니까?`)) return;
-            const projectId = savedProjects[selected] && savedProjects[selected].supabaseProjectId;
-            if (projectId && supabaseClient) {
-                const { error: itemError } = await supabaseClient
-                    .from(SUPABASE_ITEMS_TABLE)
-                    .delete()
-                    .eq('project_id', projectId);
-                const { error: projectError } = await supabaseClient
-                    .from(SUPABASE_PROJECTS_TABLE)
-                    .delete()
-                    .eq('id', projectId);
-                if (itemError || projectError) {
-                    console.error('Supabase project delete error:', itemError || projectError);
-                    alert('Supabase 프로젝트 삭제에 실패했습니다.');
-                    return;
-                }
-            }
             delete savedProjects[selected];
             localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
             loadSavedProjects();
-            if (projectId && projectId === activeProjectId) {
-                activeProjectId = null;
-                localStorage.removeItem(LAST_PROJECT_ID_KEY);
-                clearProjectUrl();
-            }
-            await recordProjectHistory('프로젝트 삭제', selected);
+            queueSupabaseSync();
             alert('프로젝트가 삭제되었습니다.');
         }
 
@@ -2629,11 +2015,6 @@
         }
 
         function importProjectsJson(event) {
-            if (isViewOnly) {
-                alert('읽기 전용 모드에서는 JSON을 가져올 수 없습니다.');
-                event.target.value = '';
-                return;
-            }
             const file = event.target.files && event.target.files[0];
             if (!file) return;
 
@@ -2650,7 +2031,7 @@
                     savedProjects = { ...savedProjects, ...importedProjects };
                     localStorage.setItem(PROJECTS_KEY, JSON.stringify(savedProjects));
                     loadSavedProjects();
-                    recordProjectHistory('JSON 가져오기', '프로젝트 백업');
+                    queueSupabaseSync();
                     alert(`${Object.keys(importedProjects).length}개 프로젝트를 가져왔습니다.`);
                 } catch (error) {
                     alert('프로젝트 JSON 파일을 가져오지 못했습니다. 파일 형식을 확인해주세요.');
@@ -2672,16 +2053,7 @@
             } catch (error) {
                 savedProjects = {};
             }
-            const query = (projectSearchEl && projectSearchEl.value ? projectSearchEl.value : '').trim().toLowerCase();
-            const projectNames = Object.keys(savedProjects)
-                .filter(name => !savedProjects[name].archived)
-                .filter(name => !query || name.toLowerCase().includes(query))
-                .sort((a, b) => {
-                    const aTime = Date.parse(savedProjects[a].updatedAt || 0) || 0;
-                    const bTime = Date.parse(savedProjects[b].updatedAt || 0) || 0;
-                    return bTime - aTime || a.localeCompare(b);
-                });
-            savedProjectsSelect.innerHTML = '<option value="">저장된 프로젝트 선택</option>' + projectNames.map(name => `<option value="${name}">${name}</option>`).join('');
+            savedProjectsSelect.innerHTML = '<option value="">저장된 프로젝트 선택</option>' + Object.keys(savedProjects).map(name => `<option value="${name}">${name}</option>`).join('');
         }
 
         function saveState() {
@@ -2693,8 +2065,7 @@
                 viewMode: currentViewMode
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            rememberCurrentProjectLocally();
-            queueProjectSync();
+            queueSupabaseSync();
         }
 
         function loadState() {
@@ -2742,7 +2113,6 @@
         }
 
         function init() {
-            applyAccessMode();
             loadSavedProjects();
             loadState();
             loadDefaultTemplateIfEmpty();
