@@ -1212,7 +1212,7 @@
         const HISTORY_KEY = 'productionBudgetHistory';
         const USER_NAME_KEY = 'productionBudgetUserName';
         const SUPABASE_URL = 'https://zxmzzrcgulawsffaobaj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_q2HCDDvgTgumPazVrN0Acw_RQ3IYWPx';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bXp6cmNndWxhd3NmZmFvYmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzAyNDcsImV4cCI6MjA5NTkwNjI0N30.Rl6Pd6lKJhhJ67O6QRJSNzTzqapsMGmBVsGbgsuTqtA';
         const SUPABASE_PROJECTS_TABLE = 'projects';
         const SUPABASE_ITEMS_TABLE = 'budget_items';
         const SUPABASE_HISTORY_TABLE = 'project_history';
@@ -2350,19 +2350,20 @@
                 return;
             }
             setSyncStatus('Supabase 테스트 중...', 'saving');
-            const { error } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from(SUPABASE_PROJECTS_TABLE)
                 .select('id')
                 .limit(1);
             if (error) {
-                console.error('Supabase connection test error:', error);
+                console.error('Supabase projects select test failed:', error);
                 setConnectionLost();
                 alert('Supabase 연결 실패: 테이블 설정 또는 네트워크를 확인해주세요.');
                 return;
             }
             isSupabaseConnected = true;
-            setSyncStatus('Supabase 연결 정상', 'saved');
-            alert('Supabase 연결이 정상입니다.');
+            console.info('Supabase projects select test succeeded:', data);
+            setSyncStatus('Supabase 연결됨', 'saved');
+            alert('Supabase 연결됨');
         }
 
         function exportCurrentProjectJson() {
